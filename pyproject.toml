@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fifi"
+version = "0.0.1"
+description = "FiFi Core is full of tools"
+readme = "README.md"
+authors = [
+  { name = "FiFi", email = "sayad.mehrdad@gmail.com" },
+]
+license = { file = "LICENSE" }
+classifiers = [
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Operating System :: OS Independent",
+]
+keywords = ["core", "db", "utility"]
+dependencies = [
+  "SQLAlchemy",
+]
+requires-python = ">=3.12.0"
+
+[project.optional-dependencies]
+dev = ["black", "bumpver", "isort", "pip-tools", "pytest"]
+
+[project.urls]
+Homepage = "https://github.com/fifisayad/FiFiCore.git"
+
+[project.scripts]
+# realpython = "reader.__main__:main"
