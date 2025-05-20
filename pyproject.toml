@@ -3,7 +3,7 @@ requires = ["setuptools >= 77.0.3"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "fifi"
+name = "fificore"
 version = "0.0.1"
 description = "FiFi Core is full of tools"
 readme = "README.md"
