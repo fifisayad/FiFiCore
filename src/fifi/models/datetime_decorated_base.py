@@ -6,6 +6,7 @@ from ..models.decorated_base import DecoratedBase
 
 
 class DatetimeDecoratedBase(DecoratedBase):
+    __abstract__ = True
     updated_at: Mapped[datetime] = mapped_column(
         index=True,
         doc="Last Update Time",
