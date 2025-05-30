@@ -5,6 +5,7 @@ __all__ = [
     "timeit_log",
     "DecoratedBase",
     "DatetimeDecoratedBase",
+    "RedisChannelSubException",
 ]
 
 import logging
@@ -15,6 +16,7 @@ from .decorator.singleton import singleton
 from .decorator.time_log import timeit_log
 from .models.decorated_base import DecoratedBase
 from .models.datetime_decorated_base import DatetimeDecoratedBase
+from .exceptions.exceptions import RedisChannelSubException
 
 
 # Setup logger

@@ -1,0 +1,2 @@
+class RedisChannelSubException(Exception):
+    pass
