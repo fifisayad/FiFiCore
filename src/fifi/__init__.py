@@ -7,6 +7,8 @@ __all__ = [
     "DatetimeDecoratedBase",
     "RedisChannelSubException",
     "GetLogger",
+    "RedisSubscriber",
+    "RedisPublisher",
 ]
 
 from .database.sqlalchemy_engine_base import SQLAlchemyEngineBase
@@ -17,3 +19,5 @@ from .models.decorated_base import DecoratedBase
 from .models.datetime_decorated_base import DatetimeDecoratedBase
 from .exceptions.exceptions import RedisChannelSubException
 from .helpers.get_logger import GetLogger
+from .redis.redis_subscriber import RedisSubscriber
+from .redis.redis_publisher import RedisPublisher
