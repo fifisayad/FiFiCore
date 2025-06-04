@@ -1,7 +1,7 @@
 import json
 import traceback
 from typing import Dict, Optional
-from aioredis import PubSubError
+from redis import PubSubError
 
 from ..helpers.get_logger import GetLogger
 from .redis_client import RedisClient
@@ -47,6 +47,9 @@ class RedisPublisher:
             publish_message = json.dumps(message)
         try:
             await self.redis.publish(self.channel, str(publish_message))
+            self.logger.debug(
+                f"[Publisher-Redis]: published this data: {publish_message}"
+            )
         except PubSubError:
             error_message = traceback.format_exc()
             self.logger.error(f"[Publisher-Redis] pubsub error: {error_message}")
