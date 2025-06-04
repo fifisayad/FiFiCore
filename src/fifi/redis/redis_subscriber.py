@@ -3,7 +3,6 @@ import json
 from typing import Dict, List, Optional
 
 from ..helpers.get_logger import GetLogger
-from fifi.exceptions.exceptions import RedisChannelSubException
 from .redis_client import RedisClient
 
 
@@ -47,25 +46,27 @@ class RedisSubscriber:
         it subscribe the channel and also listen to the channel and if there is any message
         it puts on the message buffer.
         """
+        await self.pubsub.subscribe(self.channel)
+        self.logger.debug("[Subscriber-Redis] Waiting for messages...")
         try:
-            res = await self.pubsub.subscribe(self.channel)
-            if res is None:
-                raise RedisChannelSubException(
-                    f"there is no channel with name: {self.channel}"
-                )
-            self.logger.debug("[Subscriber-Redis] Waiting for messages...")
             async for msg in self.pubsub.listen():
                 try:
-                    data = json.loads(msg)
-                    async with self.messages_lock:
-                        self.messages.append(data)
-                    self.logger.debug(f"[Subscriber-Redis] Received: {data}")
+                    self.logger.debug(f"[Subscriber-Redis] Received: {msg}")
+                    if msg["type"] == "message":
+                        data = json.loads(msg["data"])
+                        async with self.messages_lock:
+                            self.messages.append(data)
+                        self.logger.debug(f"[Subscriber-Redis] Received: {data}")
                 except json.JSONDecodeError:
                     self.logger.debug(
                         f"[Subscriber-Redis] Failed to decode message: {msg}"
                     )
         finally:
+            await self.pubsub.unsubscribe()
+            await self.pubsub.punsubscribe()
+            await self.pubsub.close()
             await self.redis_client.close()
+            return
 
     async def get_messages(self) -> List:
         """get_messages.
@@ -91,7 +92,7 @@ class RedisSubscriber:
         try:
             result = self.messages[-1]
         except IndexError:
-            self.logger.warn(
+            self.logger.warning(
                 f"[Subscriber-Redis] there is no messages on the {self.channel} channel"
             )
             return None
