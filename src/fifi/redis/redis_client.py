@@ -1,12 +1,11 @@
 from typing import Any, Dict
-import aioredis
 import os
-from aioredis import Redis
+import redis.asyncio as aioredis
+from redis.asyncio import Redis
 
 from ..decorator.singleton import singleton
 
 
-@singleton
 class RedisClient:
     """RedisClient.
     This class is going to create redis connection client.
@@ -36,7 +35,7 @@ class RedisClient:
             username (str): username
             password (str): password
         """
-        kwargs: Dict[str, Any] = {"decode_response": True}
+        kwargs: Dict[str, Any] = {"decode_responses": True}
         if username:
             kwargs["username"] = username
             kwargs["password"] = password
