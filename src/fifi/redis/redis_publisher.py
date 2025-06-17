@@ -48,7 +48,7 @@ class RedisPublisher:
         try:
             await self.redis.publish(self.channel, str(publish_message))
             self.logger.debug(
-                f"[Publisher-Redis]: published this data: {publish_message}"
+                f"[Publisher-Redis]: published this data: {publish_message} on this channel: {self.channel}"
             )
         except PubSubError:
             error_message = traceback.format_exc()
