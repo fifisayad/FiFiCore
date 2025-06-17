@@ -28,7 +28,7 @@ class RedisSubscriber:
         self.messages_lock = asyncio.Lock()
         self.messages = list()
         # create task for getting messages on the channel
-        asyncio.create_task(self.subscriber())
+        self.task = asyncio.create_task(self.subscriber())
 
     @classmethod
     async def create(cls, channel: str):
@@ -40,6 +40,12 @@ class RedisSubscriber:
         """
         redis_client = await RedisClient.create()
         return cls(redis_client, channel)
+    
+    def close(self):
+        """close.
+        cancel subscriber future task...
+        """
+        self.task.cancel()
 
     async def subscriber(self):
         """subscriber.
@@ -62,10 +68,10 @@ class RedisSubscriber:
                         f"[Subscriber-Redis] Failed to decode message: {msg}"
                     )
         finally:
+            self.logger.debug("[Subscriber-Redis]: finally section ...")
             await self.pubsub.unsubscribe()
             await self.pubsub.punsubscribe()
-            await self.pubsub.close()
-            await self.redis_client.close()
+            await self.redis_client.redis.aclose()
             return
 
     async def get_messages(self) -> List:
