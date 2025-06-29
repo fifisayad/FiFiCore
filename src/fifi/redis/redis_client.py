@@ -3,8 +3,6 @@ import os
 import redis.asyncio as aioredis
 from redis.asyncio import Redis
 
-from ..decorator.singleton import singleton
-
 
 class RedisClient:
     """RedisClient.
