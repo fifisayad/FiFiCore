@@ -1,3 +1,4 @@
+import os
 import asyncio
 from abc import ABC
 
@@ -17,13 +18,13 @@ class SQLAlchemyEngineBase(ABC):
 
     def __init__(
         self,
-        user: str,
-        password: str,
-        host: str,
-        port: int,
-        db_name: str,
-        db_tech: str = "sqllite",
-        db_lib: str = "aiosqlite",
+        user: str = os.getenv("DATABASE_USER", ""),
+        password: str = os.getenv("DATABASE_PASS", ""),
+        host: str = os.getenv("DATABASE_HOST", ""),
+        port: int = int(os.getenv("DATABASE_PORT", 0)),
+        db_name: str = os.getenv("DATABASE_NAME", ""),
+        db_tech: str = os.getenv("DATABASE_TECH", "sqllite"),
+        db_lib: str = os.getenv("DATABASE_LIB", "aiosqlite"),
     ):
         """__init__.
 
