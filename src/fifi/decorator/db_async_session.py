@@ -1,20 +1,17 @@
 import functools
-from sqlalchemy.orm import sessionmaker
+
+from ..data.database_provider import DatabaseProvider
 
 
-def db_async_session(session_maker: sessionmaker):
-    def decorator(func):
-        @functools.wraps(func)
-        async def wrapper(*args, **kwargs):
-            async with session_maker() as session:
-                try:
-                    result = await func(*args, session=session, **kwargs)
-                    await session.commit()
-                    return result
-                except Exception:
-                    await session.rollback()
-                    raise
+def db_async_session(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        async with DatabaseProvider().get_new_seddion() as session:
+            try:
+                result = await func(*args, session=session, **kwargs)
+                return result
+            except Exception:
+                await session.rollback()
+                raise
 
-        return wrapper
-
-    return decorator
+    return wrapper
