@@ -1,5 +1,5 @@
 __all__ = [
-    "SQLAlchemyEngineBase",
+    "DatabaseProvider",
     "db_async_session",
     "singleton",
     "timeit_log",
@@ -11,7 +11,7 @@ __all__ = [
     "RedisPublisher",
 ]
 
-from .database.sqlalchemy_engine_base import SQLAlchemyEngineBase
+from .data.database_provider import DatabaseProvider
 from .decorator.db_async_session import db_async_session
 from .decorator.singleton import singleton
 from .decorator.time_log import timeit_log
