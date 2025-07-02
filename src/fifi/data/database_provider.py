@@ -1,14 +1,15 @@
 import os
 import asyncio
-from abc import ABC
 
-from sqlalchemy.ext.asyncio import AsyncEngine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
 
+from ..decorator.singleton import singleton
 from ..models.decorated_base import DecoratedBase
 
 
-class SQLAlchemyEngineBase(ABC):
+@singleton
+class DatabaseProvider:
     """
     This is a abstract class for providing enginge to database we consider it.
     """
@@ -38,6 +39,7 @@ class SQLAlchemyEngineBase(ABC):
             db_lib (str): db_lib
         """
 
+        # TODO: add try catch for raising Exception for DB connection
         self.engine = create_async_engine(
             url="{}+{}://{}:{}@{}:{}/{}".format(
                 db_tech,
@@ -55,6 +57,27 @@ class SQLAlchemyEngineBase(ABC):
 
         asyncio.run(self.init_models())
 
+    def get_new_seddion(self) -> AsyncSession:
+        """get_new_seddion.
+        get a new session of session pool.
+
+        Args:
+
+        Returns:
+            AsyncSession:
+        """
+        return self.session_maker()
+
+    async def shutdown(self):
+        """shutdown.
+        dispose database engine in terms of gracefully shutting down
+        """
+        await self.engine.dispose()
+
     async def init_models(self):
+        """init_models.
+        initialize and create tables which are defined in the project in the
+        database
+        """
         async with self.engine.begin() as conn:
             await conn.run_sync(DecoratedBase.metadata.create_all)
