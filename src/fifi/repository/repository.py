@@ -1,17 +1,19 @@
 from dataclasses import dataclass
-from typing import Generic, Type, TypeAlias, TypeVar
+from typing import Generic, Optional, Type, TypeAlias, TypeVar
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from pydantic import BaseModel
 
+from ..decorator.db_async_session import db_async_session
+from ..decorator.db_check_session_injection import db_check_session_injection
+
 from ..models.decorated_base import DecoratedBase
 from ..exceptions import *
 
 
 # Generic Type for Pydantic and SQLAlchemy
-# FiFiModel: TypeAlias = DecoratedBase
 FiFiModel = TypeVar("FiFiModel", bound=DecoratedBase)
 FiFiSchema: TypeAlias = BaseModel
 
@@ -20,6 +22,7 @@ FiFiSchema: TypeAlias = BaseModel
 class Repository(Generic[FiFiModel]):
     model: Type[FiFiModel]
 
+    @db_async_session
     async def create(
         self,
         session: AsyncSession,
@@ -47,11 +50,12 @@ class Repository(Generic[FiFiModel]):
             return db_model
         except IntegrityError:
             raise IntegrityConflictException(
-                f"{model.__tablename__} conflicts with existing data.",
+                f"{self.model.__tablename__} conflicts with existing data.",
             )
         except Exception as e:
             raise FiFiException(f"Unknown error occurred: {e}") from e
 
+    @db_check_session_injection
     async def create_many(
         self,
         session: AsyncSession,
@@ -73,13 +77,13 @@ class Repository(Generic[FiFiModel]):
         Returns:
             list[FiFiModel] | bool: list of created SQLAlchemy models or boolean
         """
-        db_models = [model(**d.model_dump()) for d in data]
+        db_models = [self.model(**d.model_dump()) for d in data]
         try:
             session.add_all(db_models)
             await session.commit()
         except IntegrityError:
             raise IntegrityConflictException(
-                f"{model.__tablename__} conflict with existing data.",
+                f"{self.model.__tablename__} conflict with existing data.",
             )
         except Exception as e:
             raise FiFiException(f"Unknown error occurred: {e}") from e
@@ -94,18 +98,18 @@ class Repository(Generic[FiFiModel]):
 
     async def get_one_by_id(
         self,
-        session: AsyncSession,
-        id_: str | UUID,
-        column: str = "uuid",
+        session: Optional[AsyncSession],
+        id_: str,
+        column: str = "id",
         with_for_update: bool = False,
-    ) -> FiFiModel:
+    ) -> Optional[FiFiModel]:
         """Fetches one record from the database based on a column value and returns
         it, or returns None if it does not exist. Raises an exception if the column
         doesn't exist.
 
         Args:
-            session (AsyncSession): SQLAlchemy async session
-            id_ (str | UUID): value to search for in `column`.
+            session (AsyncSession, optional): SQLAlchemy async session
+            id_ (str): value to search for in `column`.
             column (str, optional): the column name in which to search.
                 Defaults to "uuid".
             with_for_update (bool, optional): Should the returned row be locked
@@ -118,11 +122,13 @@ class Repository(Generic[FiFiModel]):
         Returns:
             FiFiModel: SQLAlchemy model or None
         """
+        if not session:
+            raise NotExistSessionException("There is No Session")
         try:
-            q = select(model).where(getattr(model, column) == id_)
+            q = select(self.model).where(getattr(self.model, column) == id_)
         except AttributeError:
             raise FiFiException(
-                f"Column {column} not found on {model.__tablename__}.",
+                f"Column {column} not found on {self.model.__tablename__}.",
             )
 
         if with_for_update:
@@ -131,12 +137,11 @@ class Repository(Generic[FiFiModel]):
         results = await session.execute(q)
         return results.unique().scalar_one_or_none()
 
-    @classmethod
     async def get_many_by_ids(
-        cls,
-        session: AsyncSession,
-        ids: list[str | UUID] = None,
-        column: str = "uuid",
+        self,
+        session: Optional[AsyncSession],
+        ids: Optional[list[str]],
+        column: str = "id",
         with_for_update: bool = False,
     ) -> list[FiFiModel]:
         """Fetches multiple records from the database based on a column value and
@@ -144,41 +149,44 @@ class Repository(Generic[FiFiModel]):
 
         Args:
             session (AsyncSession): SQLAlchemy async session
-            ids (list[str  |  UUID], optional): list of values to search for in
+            ids (list[str], optional): list of values to search for in
                 `column`. Defaults to None.
             column (str, optional): the column name in which to search
-                Defaults to "uuid".
+                Defaults to "id".
             with_for_update (bool, optional): Should the returned rows be locked
                 during the lifetime of the current open transactions.
                 Defaults to False.
 
         Raises:
             FiFiException: if the column does not exist on the model
+            NotExistSessionException: if not session append to the calling this method
 
         Returns:
             list[FiFiModel]: list of SQLAlchemy models
         """
-        q = select(model)
+        if not session:
+            raise NotExistSessionException("There is No Session")
+        q = select(self.model)
         if ids:
             try:
-                q = q.where(getattr(model, column).in_(ids))
+                q = q.where(getattr(self.model, column).in_(ids))
             except AttributeError:
                 raise FiFiException(
-                    f"Column {column} not found on {model.__tablename__}.",
+                    f"Column {column} not found on {self.model.__tablename__}.",
                 )
 
         if with_for_update:
             q = q.with_for_update()
 
         rows = await session.execute(q)
-        return rows.unique().scalars().all()
+        return list(rows.unique().scalars().all())
 
     async def update_by_id(
         self,
-        session: AsyncSession,
+        session: Optional[AsyncSession],
         data: FiFiSchema,
-        id_: str | UUID,
-        column: str = "uuid",
+        id_: str,
+        column: str = "id",
     ) -> FiFiModel:
         """Updates a record in the database based on a column value and returns the
         updated record. Raises an exception if the record isn't found or if the
@@ -197,12 +205,14 @@ class Repository(Generic[FiFiModel]):
         Returns:
             FiFiModel: updated SQLAlchemy model
         """
-        db_model = await cls.get_one_by_id(
+        if not session:
+            raise NotExistSessionException("There is No Session")
+        db_model = await self.get_one_by_id(
             session, id_, column=column, with_for_update=True
         )
         if not db_model:
             raise NotFoundException(
-                f"{model.__tablename__} {column}={id_} not found.",
+                f"{self.model.__tablename__} {column}={id_} not found.",
             )
 
         values = data.model_dump(exclude_unset=True)
@@ -215,14 +225,14 @@ class Repository(Generic[FiFiModel]):
             return db_model
         except IntegrityError:
             raise IntegrityConflictException(
-                f"{model.__tablename__} {column}={id_} conflict with existing data.",
+                f"{self.model.__tablename__} {column}={id_} conflict with existing data.",
             )
 
     async def update_many_by_ids(
         self,
-        session: AsyncSession,
-        updates: dict[str | UUID, FiFiSchema],
-        column: str = "uuid",
+        session: Optional[AsyncSession],
+        updates: dict[str, FiFiSchema],
+        column: str = "id",
         return_models: bool = False,
     ) -> list[FiFiModel] | bool:
         """Updates multiple records in the database based on a column value and
@@ -245,9 +255,11 @@ class Repository(Generic[FiFiModel]):
         Returns:
             list[FiFiModel] | bool: list of updated SQLAlchemy models or boolean
         """
+        if not session:
+            raise NotExistSessionException("There is No Session")
         updates = {str(id): update for id, update in updates.items() if update}
         ids = list(updates.keys())
-        db_models = await cls.get_many_by_ids(
+        db_models = await self.get_many_by_ids(
             session, ids=ids, column=column, with_for_update=True
         )
 
