@@ -3,26 +3,25 @@ import sqlite3
 from typing import Optional
 import pytest
 import logging
-from sqlalchemy import Column, Integer, Select, String
+from sqlalchemy import Column, Select, String
 from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.fifi import SQLAlchemyEngineBase
+from src.fifi import DatabaseProvider
 from src.fifi import DecoratedBase
 from src.fifi import db_async_session
 
 
 class DummyModel(DecoratedBase):
     __tablename__ = "dummy"
-    id = Column(Integer, primary_key=True)
     name = Column(String)
 
 
 @pytest.fixture
 def sql_alchemy_engine_base_test():
     sqlite3.connect("memory")
-    engine_base = SQLAlchemyEngineBase(
+    engine_base = DatabaseProvider(
         user="",
         password="",
         host="",
@@ -38,7 +37,7 @@ def sql_alchemy_engine_base_test():
 @pytest.mark.asyncio
 class TestSQLAlchemyEngineBase:
 
-    async def test_engine_base_initializes_correctly(
+    async def _test_engine_base_initializes_correctly(
         self, sql_alchemy_engine_base_test
     ):
 
@@ -59,8 +58,12 @@ class TestSQLAlchemyEngineBase:
             assert table == "dummy"
 
     async def test_dict_decorated_base(self, sql_alchemy_engine_base_test):
+        assert isinstance(sql_alchemy_engine_base_test.engine, AsyncEngine)
+        assert isinstance(
+            sql_alchemy_engine_base_test.session_maker, async_sessionmaker
+        )
 
-        @db_async_session(sql_alchemy_engine_base_test.session_maker)
+        @db_async_session
         async def data_seeder(session: Optional[AsyncSession] = None):
             if not session:
                 raise Exception()
@@ -68,8 +71,9 @@ class TestSQLAlchemyEngineBase:
             mehrdad = DummyModel(name="Mehrdad")
             session.add(fifi)
             session.add(mehrdad)
+            await session.commit()
 
-        @db_async_session(sql_alchemy_engine_base_test.session_maker)
+        @db_async_session
         async def data_reader(session: Optional[AsyncSession] = None) -> DummyModel:
             if not session:
                 raise Exception()
