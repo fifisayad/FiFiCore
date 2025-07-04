@@ -13,10 +13,11 @@ LOGGER = GetLogger().get()
 
 
 @pytest.fixture
-def mock_user_data():
-    data = UserSchema(username=fake.name(), email=fake.email(), is_active=True)
-    yield data
-    del data
+def user_factory():
+    def create_user():
+        return UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+
+    return create_user
 
 
 class UserSchema(BaseModel):
@@ -36,19 +37,24 @@ class UserModel(DatetimeDecoratedBase):
 class TestRepository:
     user_repo = Repository(UserModel)
 
-    async def test_create_repository(self, database_provider_test, mock_user_data):
-        new_user = await self.user_repo.create(data=mock_user_data)
+    async def test_create_repository(self, database_provider_test, user_factory):
+        new_user_schema = user_factory()
+        new_user = await self.user_repo.create(data=new_user_schema)
 
         LOGGER.info(f"user model is: {new_user.to_dict()}")
-        assert new_user.email == mock_user_data.email
-        assert new_user.username == mock_user_data.username
-        assert new_user.is_active == mock_user_data.is_active
+        assert new_user.email == new_user_schema.email
+        assert new_user.username == new_user_schema.username
+        assert new_user.is_active == new_user_schema.is_active
 
     async def test_create_integrity_exception_repository(
-        self, database_provider_test, mock_user_data
+        self, database_provider_test, user_factory
     ):
-        first_user = await self.user_repo.create(data=mock_user_data)
+        first_user_schema = user_factory()
+        first_user = await self.user_repo.create(data=first_user_schema)
         LOGGER.info(f"first user data: {first_user.to_dict()}")
         # Username and Email are unique in the user table it's not going to create again
+        second_user_schema = user_factory()
+        second_user_schema.email = first_user_schema.email
+        LOGGER.info(f"second user data: {second_user_schema.model_dump()}")
         with pytest.raises(IntegrityConflictException):
-            second_user = await self.user_repo.create(data=mock_user_data)
+            second_user = await self.user_repo.create(data=second_user_schema)
