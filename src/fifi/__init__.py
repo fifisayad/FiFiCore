@@ -9,6 +9,7 @@ __all__ = [
     "GetLogger",
     "RedisSubscriber",
     "RedisPublisher",
+    "Repository",
 ]
 
 from .data.database_provider import DatabaseProvider
@@ -21,3 +22,4 @@ from .exceptions.exceptions import RedisChannelSubException
 from .helpers.get_logger import GetLogger
 from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
+from .repository.repository import Repository
