@@ -19,9 +19,9 @@ class DummyModel(DecoratedBase):
 
 
 @pytest.fixture
-def sql_alchemy_engine_base_test():
+def database_provider_test():
     sqlite3.connect("memory")
-    engine_base = DatabaseProvider(
+    db = DatabaseProvider(
         user="",
         password="",
         host="",
@@ -30,23 +30,22 @@ def sql_alchemy_engine_base_test():
         db_tech="sqlite",
         db_lib="aiosqlite",
     )
-    yield engine_base
+    yield db
+    # remove singleton instance
+    DatabaseProvider.instance = None
+    # remove sqlite instance file
     os.remove("./memory")
 
 
 @pytest.mark.asyncio
-class TestSQLAlchemyEngineBase:
+class TestDatabaseProvider:
 
-    async def _test_engine_base_initializes_correctly(
-        self, sql_alchemy_engine_base_test
-    ):
+    async def test_database_initializes_correctly(self, database_provider_test):
 
-        assert isinstance(sql_alchemy_engine_base_test.engine, AsyncEngine)
-        assert isinstance(
-            sql_alchemy_engine_base_test.session_maker, async_sessionmaker
-        )
+        assert isinstance(database_provider_test.engine, AsyncEngine)
+        assert isinstance(database_provider_test.session_maker, async_sessionmaker)
 
-        async with sql_alchemy_engine_base_test.engine.begin() as conn:
+        async with database_provider_test.engine.begin() as conn:
 
             result = await conn.execute(
                 text(
@@ -57,12 +56,7 @@ class TestSQLAlchemyEngineBase:
             logging.info(f"tables = {table}")
             assert table == "dummy"
 
-    async def test_dict_decorated_base(self, sql_alchemy_engine_base_test):
-        assert isinstance(sql_alchemy_engine_base_test.engine, AsyncEngine)
-        assert isinstance(
-            sql_alchemy_engine_base_test.session_maker, async_sessionmaker
-        )
-
+    async def test_dict_decorated_base(self, database_provider_test):
         @db_async_session
         async def data_seeder(session: Optional[AsyncSession] = None):
             if not session:
