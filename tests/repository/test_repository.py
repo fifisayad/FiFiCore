@@ -2,6 +2,7 @@ from pydantic import BaseModel
 import pytest
 from sqlalchemy.orm import Mapped, mapped_column
 
+from src.fifi.exceptions import IntegrityConflictException
 from src.fifi import Repository
 from src.fifi import DatetimeDecoratedBase
 from src.fifi import GetLogger
@@ -13,7 +14,9 @@ LOGGER = GetLogger().get()
 
 @pytest.fixture
 def mock_user_data():
-    return UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+    data = UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+    yield data
+    del data
 
 
 class UserSchema(BaseModel):
@@ -31,11 +34,21 @@ class UserModel(DatetimeDecoratedBase):
 
 @pytest.mark.asyncio
 class TestRepository:
+    user_repo = Repository(UserModel)
+
     async def test_create_repository(self, database_provider_test, mock_user_data):
-        user_repo = Repository(UserModel)
-        new_user = await user_repo.create(data=mock_user_data)
+        new_user = await self.user_repo.create(data=mock_user_data)
 
         LOGGER.info(f"user model is: {new_user.to_dict()}")
         assert new_user.email == mock_user_data.email
         assert new_user.username == mock_user_data.username
         assert new_user.is_active == mock_user_data.is_active
+
+    async def test_create_integrity_exception_repository(
+        self, database_provider_test, mock_user_data
+    ):
+        first_user = await self.user_repo.create(data=mock_user_data)
+        LOGGER.info(f"first user data: {first_user.to_dict()}")
+        # Username and Email are unique in the user table it's not going to create again
+        with pytest.raises(IntegrityConflictException):
+            second_user = await self.user_repo.create(data=mock_user_data)
