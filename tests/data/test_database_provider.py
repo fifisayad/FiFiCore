@@ -1,5 +1,3 @@
-import os
-import sqlite3
 from typing import Optional
 import pytest
 import logging
@@ -8,7 +6,6 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, AsyncEngine
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio.session import AsyncSession
 
-from src.fifi import DatabaseProvider
 from src.fifi import DecoratedBase
 from src.fifi import db_async_session
 
@@ -16,25 +13,6 @@ from src.fifi import db_async_session
 class DummyModel(DecoratedBase):
     __tablename__ = "dummy"
     name = Column(String)
-
-
-@pytest.fixture
-def database_provider_test():
-    sqlite3.connect("memory")
-    db = DatabaseProvider(
-        user="",
-        password="",
-        host="",
-        port=0,
-        db_name="memory",
-        db_tech="sqlite",
-        db_lib="aiosqlite",
-    )
-    yield db
-    # remove singleton instance
-    DatabaseProvider.instance = None
-    # remove sqlite instance file
-    os.remove("./memory")
 
 
 @pytest.mark.asyncio
@@ -81,3 +59,5 @@ class TestDatabaseProvider:
         assert isinstance(fifi.to_dict(), dict)
         assert isinstance(fifi, DummyModel)
         assert str(fifi.name) == "FiFi"
+
+    # TODO: add test for datetime decorated base
