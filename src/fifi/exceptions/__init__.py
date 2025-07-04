@@ -3,6 +3,7 @@ __all__ = [
     "FiFiException",
     "IntegrityConflictException",
     "NotFoundException",
+    "NotExistedSessionException",
 ]
 
 from .exceptions import *

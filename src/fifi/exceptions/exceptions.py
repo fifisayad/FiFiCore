@@ -12,3 +12,7 @@ class IntegrityConflictException(Exception):
 
 class NotFoundException(Exception):
     pass
+
+
+class NotExistedSessionException(Exception):
+    pass
