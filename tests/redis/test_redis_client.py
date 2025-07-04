@@ -6,8 +6,12 @@ from src.fifi import RedisSubscriber, RedisPublisher
 from src.fifi import GetLogger
 
 
+# TODO: add a test for redis pub-sub time performance
+# TOOD: test get messages in the RedisSubscriber
+
 CHANNEL: str = "test_channel"
 LOGGER = GetLogger().get()
+
 
 @pytest_asyncio.fixture
 async def setup_redis_subscriber():
