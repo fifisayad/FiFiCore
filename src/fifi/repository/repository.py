@@ -81,6 +81,10 @@ class Repository(Generic[FiFiModel]):
         if not session:
             raise NotExistedSessionException("session is not existed")
         db_models = [self.model(**d.model_dump()) for d in data]
+        if not data:
+            if not return_models:
+                return False
+            return db_models
         try:
             session.add_all(db_models)
             await session.commit()
