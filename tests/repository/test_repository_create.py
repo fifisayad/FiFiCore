@@ -1,40 +1,13 @@
-from pydantic import BaseModel
+from unittest.mock import AsyncMock
 import pytest
-from sqlalchemy.orm import Mapped, mapped_column
 
 from src.fifi.exceptions import IntegrityConflictException
 from src.fifi import Repository
-from src.fifi import DatetimeDecoratedBase
-from src.fifi import GetLogger
-from faker import Faker
-
-fake = Faker()
-LOGGER = GetLogger().get()
-
-
-@pytest.fixture
-def user_factory():
-    def create_user():
-        return UserSchema(username=fake.name(), email=fake.email(), is_active=True)
-
-    return create_user
-
-
-class UserSchema(BaseModel):
-    username: str
-    email: str
-    is_active: bool = True
-
-
-class UserModel(DatetimeDecoratedBase):
-    __tablename__ = "user"
-    username: Mapped[str] = mapped_column(nullable=False, unique=True, index=True)
-    email: Mapped[str] = mapped_column(unique=True, index=True, nullable=False)
-    is_active: Mapped[bool] = mapped_column(default=True, server_default="TRUE")
+from tests.repository.materials import *
 
 
 @pytest.mark.asyncio
-class TestRepository:
+class TestRepositoryCreate:
     user_repo = Repository(UserModel)
 
     async def test_create_repository(self, database_provider_test, user_factory):
@@ -58,3 +31,25 @@ class TestRepository:
         LOGGER.info(f"second user data: {second_user_schema.model_dump()}")
         with pytest.raises(IntegrityConflictException):
             second_user = await self.user_repo.create(data=second_user_schema)
+
+    async def test_create_many_repository(self, database_provider_test, user_factory):
+        users = [user_factory() for i in range(5)]
+        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        for i in range(5):
+            assert users[i].username == created_users[i].username
+            assert users[i].email == created_users[i].email
+            assert users[i].is_active == created_users[i].is_active
+
+        users = [user_factory() for i in range(2)]
+        is_successful = await self.user_repo.create_many(data=users)
+
+        assert is_successful == True
+
+    async def test_ceate_many_empty_data_repository(
+        self, database_provider_test, user_factory
+    ):
+        users = []
+        is_successful = await self.user_repo.create_many(users)
+        assert is_successful == False
+        created_users = await self.user_repo.create_many(users, return_models=True)
+        assert created_users == users
