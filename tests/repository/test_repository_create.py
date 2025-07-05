@@ -1,4 +1,3 @@
-from unittest.mock import AsyncMock
 import pytest
 
 from src.fifi.exceptions import IntegrityConflictException
@@ -53,3 +52,12 @@ class TestRepositoryCreate:
         assert is_successful == False
         created_users = await self.user_repo.create_many(users, return_models=True)
         assert created_users == users
+
+    async def test_create_many_repository_integrity_exception(
+        self, database_provider_test, user_factory
+    ):
+        users = [user_factory() for i in range(3)]
+        # copy last user in terms of bring it back
+        users.append(users[-1])
+        with pytest.raises(IntegrityConflictException):
+            await self.user_repo.create_many(data=users)
