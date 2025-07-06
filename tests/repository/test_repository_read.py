@@ -5,6 +5,7 @@ from src.fifi import Repository
 from tests.repository.materials import *
 
 
+# TODO: add tests for get by ids
 @pytest.mark.asyncio
 class TestRepositoryRead:
     user_repo = Repository(UserModel)
