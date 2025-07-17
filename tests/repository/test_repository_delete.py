@@ -53,7 +53,4 @@ class TestRepositoryDelete:
         is_deleted = await self.user_repo.remove_many_by_ids(
             ids=[new_user.id, "dummy_id"]
         )
-        with pytest.raises(AssertionError):
-            LOGGER.info(f"1 user deleted not 2!")
-            assert is_deleted == 2
         assert is_deleted == 1
