@@ -2,7 +2,7 @@ class RedisChannelSubException(Exception):
     pass
 
 
-class FiFiException(Exception):
+class EntityException(Exception):
     pass
 
 

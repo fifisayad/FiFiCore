@@ -1,6 +1,6 @@
 import pytest
 
-from src.fifi.exceptions import FiFiException
+from src.fifi.exceptions import EntityException
 from src.fifi import Repository
 from tests.repository.materials import *
 
@@ -24,5 +24,5 @@ class TestRepositoryRead:
         self, database_provider_test, user_factory
     ):
         id_ = "example"
-        with pytest.raises(FiFiException):
+        with pytest.raises(EntityException):
             await self.user_repo.get_one_by_id(id_=id_, column="uuid")

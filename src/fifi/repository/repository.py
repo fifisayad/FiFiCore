@@ -13,33 +13,33 @@ from ..exceptions import *
 
 
 # Generic Type for Pydantic and SQLAlchemy
-FiFiModel = TypeVar("FiFiModel", bound=DecoratedBase)
-FiFiSchema: TypeAlias = BaseModel
+EntityModel = TypeVar("EntityModel", bound=DecoratedBase)
+EntitySchema: TypeAlias = BaseModel
 
 
 @dataclass
-class Repository(Generic[FiFiModel]):
-    model: Type[FiFiModel]
+class Repository(Generic[EntityModel]):
+    model: Type[EntityModel]
 
     @db_async_session
     async def create(
         self,
-        data: FiFiSchema,
+        data: EntitySchema,
         session: Optional[AsyncSession] = None,
-    ) -> FiFiModel:
+    ) -> EntityModel:
         """Accepts a Pydantic model, creates a new record in the database, catches
         any integrity errors, and returns the record.
 
         Args:
-            data (FiFiSchema): Pydantic model
+            data (EntitySchema): Pydantic model
             session (Optional[AsyncSession]): SQLAlchemy async session
 
         Raises:
             IntegrityConflictException: if creation conflicts with existing data
-            FiFiException: if an unknown error occurs
+            EntityException: if an unknown error occurs
 
         Returns:
-            FiFiModel: created SQLAlchemy model
+            EntityModel: created SQLAlchemy model
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
@@ -54,29 +54,29 @@ class Repository(Generic[FiFiModel]):
                 f"{self.model.__tablename__} conflicts with existing data.",
             )
         except Exception as e:
-            raise FiFiException(f"Unknown error occurred: {e}") from e
+            raise EntityException(f"Unknown error occurred: {e}") from e
 
     @db_async_session
     async def create_many(
         self,
-        data: list[FiFiSchema],
+        data: list[EntitySchema],
         return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[FiFiModel] | bool:
+    ) -> list[EntityModel] | bool:
         """_summary_
 
         Args:
             session (Optional[AsyncSession]): SQLAlchemy async session
-            data (list[FiFiSchema]): list of Pydantic models
+            data (list[EntitySchema]): list of Pydantic models
             return_models (bool, optional): Should the created models be returned
                 or a boolean indicating they have been created. Defaults to False.
 
         Raises:
             IntegrityConflictException: if creation conflicts with existing data
-            FiFiException: if an unknown error occurs
+            EntityException: if an unknown error occurs
 
         Returns:
-            list[FiFiModel] | bool: list of created SQLAlchemy models or boolean
+            list[EntityModel] | bool: list of created SQLAlchemy models or boolean
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
@@ -93,7 +93,7 @@ class Repository(Generic[FiFiModel]):
                 f"{self.model.__tablename__} conflict with existing data.",
             )
         except Exception as e:
-            raise FiFiException(f"Unknown error occurred: {e}") from e
+            raise EntityException(f"Unknown error occurred: {e}") from e
 
         if not return_models:
             return True
@@ -110,7 +110,7 @@ class Repository(Generic[FiFiModel]):
         column: str = "id",
         with_for_update: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> Optional[FiFiModel]:
+    ) -> Optional[EntityModel]:
         """Fetches one record from the database based on a column value and returns
         it, or returns None if it does not exist. Raises an exception if the column
         doesn't exist.
@@ -125,17 +125,17 @@ class Repository(Generic[FiFiModel]):
                 Defaults to False.
 
         Raises:
-            FiFiException: if the column does not exist on the model
+            EntityException: if the column does not exist on the model
 
         Returns:
-            FiFiModel: SQLAlchemy model or None
+            EntityModel: SQLAlchemy model or None
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
         try:
             q = select(self.model).where(getattr(self.model, column) == id_)
         except AttributeError:
-            raise FiFiException(
+            raise EntityException(
                 f"Column {column} not found on {self.model.__tablename__}.",
             )
 
@@ -152,7 +152,7 @@ class Repository(Generic[FiFiModel]):
         column: str = "id",
         with_for_update: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[FiFiModel]:
+    ) -> list[EntityModel]:
         """Fetches multiple records from the database based on a column value and
         returns them. Raises an exception if the column doesn't exist.
 
@@ -167,11 +167,11 @@ class Repository(Generic[FiFiModel]):
                 Defaults to False.
 
         Raises:
-            FiFiException: if the column does not exist on the model
+            EntityException: if the column does not exist on the model
             NotExistSessionException: if not session append to the calling this method
 
         Returns:
-            list[FiFiModel]: list of SQLAlchemy models
+            list[EntityModel]: list of SQLAlchemy models
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
@@ -180,7 +180,7 @@ class Repository(Generic[FiFiModel]):
             try:
                 q = q.where(getattr(self.model, column).in_(ids))
             except AttributeError:
-                raise FiFiException(
+                raise EntityException(
                     f"Column {column} not found on {self.model.__tablename__}.",
                 )
 
@@ -193,18 +193,18 @@ class Repository(Generic[FiFiModel]):
     @db_async_session
     async def update_by_id(
         self,
-        data: FiFiSchema,
+        data: EntitySchema,
         id_: str,
         column: str = "id",
         session: Optional[AsyncSession] = None,
-    ) -> FiFiModel:
+    ) -> EntityModel:
         """Updates a record in the database based on a column value and returns the
         updated record. Raises an exception if the record isn't found or if the
         column doesn't exist.
 
         Args:
             session (Optional[AsyncSession]): SQLAlchemy async session
-            data (FiFiSchema): Pydantic schema for the updated data.
+            data (EntitySchema): Pydantic schema for the updated data.
             id_ (str | UUID): value to search for in `column`
             column (str, optional): the column name in which to search
                 Defaults to "uuid".
@@ -213,7 +213,7 @@ class Repository(Generic[FiFiModel]):
             IntegrityConflictException: if the update conflicts with existing data
 
         Returns:
-            FiFiModel: updated SQLAlchemy model
+            EntityModel: updated SQLAlchemy model
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
@@ -241,18 +241,18 @@ class Repository(Generic[FiFiModel]):
     @db_async_session
     async def update_many_by_ids(
         self,
-        updates: dict[str, FiFiSchema],
+        updates: dict[str, EntitySchema],
         column: str = "id",
         return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[FiFiModel] | bool:
+    ) -> list[EntityModel] | bool:
         """Updates multiple records in the database based on a column value and
         returns the updated records. Raises an exception if the column doesn't
         exist.
 
         Args:
             session (Optional[AsyncSession]): SQLAlchemy async session
-            updates (dict[str  |  UUID, FiFiSchema]): dictionary of id_ to
+            updates (dict[str  |  UUID, EntitySchema]): dictionary of id_ to
                 Pydantic update schema
             column (str, optional): the column name in which to search.
                 Defaults to "uuid".
@@ -264,7 +264,7 @@ class Repository(Generic[FiFiModel]):
             IntegrityConflictException: if the update conflicts with existing data
 
         Returns:
-            list[FiFiModel] | bool: list of updated SQLAlchemy models or boolean
+            list[EntityModel] | bool: list of updated SQLAlchemy models or boolean
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
@@ -314,7 +314,7 @@ class Repository(Generic[FiFiModel]):
                 Defaults to "uuid".
 
         Raises:
-            FiFiException: if the column does not exist on the model
+            EntityException: if the column does not exist on the model
 
         Returns:
             int: number of rows removed, 1 if successful, 0 if not. Can be greater
@@ -325,7 +325,7 @@ class Repository(Generic[FiFiModel]):
         try:
             query = delete(self.model).where(getattr(self.model, column) == id_)
         except AttributeError:
-            raise FiFiException(
+            raise EntityException(
                 f"Column {column} not found on {self.model.__tablename__}.",
             )
 
@@ -350,8 +350,8 @@ class Repository(Generic[FiFiModel]):
                 Defaults to "uuid".
 
         Raises:
-            FiFiException: if ids is empty to stop deleting an entire table
-            FiFiException: if column does not exist on the model
+            EntityException: if ids is empty to stop deleting an entire table
+            EntityException: if column does not exist on the model
 
         Returns:
             int: _description_
@@ -359,12 +359,12 @@ class Repository(Generic[FiFiModel]):
         if not session:
             raise NotExistedSessionException("session is not existed")
         if not ids:
-            raise FiFiException("No ids provided.")
+            raise EntityException("No ids provided.")
 
         try:
             query = delete(self.model).where(getattr(self.model, column).in_(ids))
         except AttributeError:
-            raise FiFiException(
+            raise EntityException(
                 f"Column {column} not found on {self.model.__tablename__}.",
             )
 
