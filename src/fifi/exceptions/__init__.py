@@ -1,6 +1,6 @@
 __all__ = [
     "RedisChannelSubException",
-    "FiFiException",
+    "EntityException",
     "IntegrityConflictException",
     "NotFoundException",
     "NotExistedSessionException",
