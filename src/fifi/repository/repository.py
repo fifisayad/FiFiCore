@@ -191,6 +191,29 @@ class Repository(Generic[EntityModel]):
         return list(rows.unique().scalars().all())
 
     @db_async_session
+    async def update_entity(
+        self,
+        entity: EntityModel,
+        session: Optional[AsyncSession] = None,
+    ) -> None:
+        """
+        Update a model which is bound to a record in the database.
+
+        Args:
+            session (Optional[AsyncSession]): SQLAlchemy async session
+            model (EntityModel): updated SQLAlchemy mode
+        Raises:
+            NotFoundException: if the record isn't found
+            IntegrityConflictException: if the update conflicts with existing data
+
+        Returns:
+        """
+        if not session:
+            raise NotExistedSessionException("session is not existed")
+        await session.merge(entity)
+        await session.commit()
+
+    @db_async_session
     async def update_by_id(
         self,
         data: EntitySchema,
