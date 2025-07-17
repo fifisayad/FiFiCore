@@ -40,7 +40,7 @@ class TestRepositoryDelete:
         LOGGER.info(f"5 users created")
         created_users = await self.user_repo.create_many(data=users, return_models=True)
         is_deleted = await self.user_repo.remove_many_by_ids(
-            ids=[created_users[i].id for i in range(len(created_users))]
+            ids=[user.id for user in created_users]
         )
         LOGGER.info(f"5 users deleted")
         assert is_deleted == 5
