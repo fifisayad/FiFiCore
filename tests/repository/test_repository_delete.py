@@ -1,5 +1,5 @@
 from src.fifi import Repository
-from src.fifi.exceptions import FiFiException
+from src.fifi.exceptions import EntityException
 from tests.repository.materials import *
 
 
@@ -25,7 +25,7 @@ class TestRepositoryDelete:
 
         LOGGER.info(f"user created: {new_user is not None}")
         is_deleted = 0
-        with pytest.raises(FiFiException):
+        with pytest.raises(EntityException):
             is_deleted = await self.user_repo.remove_by_id(
                 id_=new_user.id, column="dummy_colmun"
             )
