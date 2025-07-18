@@ -1,5 +1,6 @@
 from src.fifi import Repository
 from tests.repository.materials import *
+from src.fifi.exceptions import IntegrityConflictException
 
 
 @pytest.mark.asyncio
@@ -44,3 +45,23 @@ class TestRepositoryUpdate:
             updated_user = updated_users_by_id[created_user.id]
             assert updated_user.username == f"miaad{i}"
             assert updated_user.email == f"miaad{i}@example.com"
+
+    async def test_update_many_by_ids_unique_error(
+        self, database_provider_test, user_factory
+    ):
+        # Creating Fake Users
+        users = [user_factory() for i in range(2)]
+        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        LOGGER.info(f"user(s) created: {[user.username for user in created_users]}")
+
+        # Updating Users
+        update_dict = dict()
+        for user in created_users:
+            update_dict[user.id] = UserSchema(
+                username=f"miaad", email=f"miaad@example.com"
+            )
+        with pytest.raises(IntegrityConflictException):
+            LOGGER.info("Catched IntegrityConflictException")
+            updated_users = await self.user_repo.update_many_by_ids(
+                updates=update_dict, return_models=True
+            )
