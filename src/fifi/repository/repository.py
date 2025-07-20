@@ -66,7 +66,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def create_many(
         self,
-        data: list[EntitySchema],
+        data: List[EntitySchema],
         return_models: bool = False,
         session: Optional[AsyncSession] = None,
     ) -> List[EntityModel] | bool:
@@ -155,7 +155,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def get_many_by_ids(
         self,
-        ids: Optional[list[str]],
+        ids: Optional[List[str]],
         column: str = "id",
         with_for_update: bool = False,
         session: Optional[AsyncSession] = None,
