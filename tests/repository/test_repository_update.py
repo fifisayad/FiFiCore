@@ -1,3 +1,4 @@
+from typing import Dict
 from src.fifi import Repository
 from tests.repository.materials import *
 from src.fifi.exceptions import IntegrityConflictException
@@ -55,7 +56,7 @@ class TestRepositoryUpdate:
         LOGGER.info(f"user(s) created: {[user.username for user in created_users]}")
 
         # Updating Users
-        update_dict = dict()
+        update_dict: Dict[str, UserSchema] = dict()
         for user in created_users:
             update_dict[user.id] = UserSchema(
                 username=f"miaad", email=f"miaad@example.com"
@@ -65,3 +66,19 @@ class TestRepositoryUpdate:
             updated_users = await self.user_repo.update_many_by_ids(
                 updates=update_dict, return_models=True
             )
+
+    async def test_update_entity(self, database_provider_test, user_factory):
+        # Creating Fake Users
+        user = user_factory()
+        created_user = await self.user_repo.create(data=user)
+        LOGGER.info(f"user created: {(created_user.id, created_user.username)}")
+
+        created_user.username = "TakeShot"
+        await self.user_repo.update_entity(created_user)
+
+        shot_user = await self.user_repo.get_one_by_id(id_=created_user.id)
+
+        assert shot_user is not None
+        LOGGER.info(f"user updated: {(shot_user.id, shot_user.username)}")
+        assert created_user.id == shot_user.id
+        assert created_user.username == shot_user.username
