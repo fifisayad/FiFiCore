@@ -1,5 +1,12 @@
 from dataclasses import dataclass
-from typing import Generic, Optional, Type, TypeAlias, TypeVar
+from typing import (
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+)
 
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -14,7 +21,7 @@ from ..exceptions import *
 
 # Generic Type for Pydantic and SQLAlchemy
 EntityModel = TypeVar("EntityModel", bound=DecoratedBase)
-EntitySchema: TypeAlias = BaseModel
+EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
 
 
 @dataclass
@@ -24,7 +31,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def create(
         self,
-        data: EntitySchema,
+        data: Type[EntitySchema],
         session: Optional[AsyncSession] = None,
     ) -> EntityModel:
         """Accepts a Pydantic model, creates a new record in the database, catches
@@ -62,7 +69,7 @@ class Repository(Generic[EntityModel]):
         data: list[EntitySchema],
         return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[EntityModel] | bool:
+    ) -> List[EntityModel] | bool:
         """_summary_
 
         Args:
@@ -152,7 +159,7 @@ class Repository(Generic[EntityModel]):
         column: str = "id",
         with_for_update: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[EntityModel]:
+    ) -> List[EntityModel]:
         """Fetches multiple records from the database based on a column value and
         returns them. Raises an exception if the column doesn't exist.
 
@@ -216,7 +223,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def update_by_id(
         self,
-        data: EntitySchema,
+        data: Type[EntitySchema],
         id_: str,
         column: str = "id",
         session: Optional[AsyncSession] = None,
@@ -261,11 +268,11 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def update_many_by_ids(
         self,
-        updates: dict[str, EntitySchema],
+        updates: Dict[str, EntitySchema],
         column: str = "id",
         return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> list[EntityModel] | bool:
+    ) -> List[EntityModel] | bool:
         """Updates multiple records in the database based on a column value and
         returns the updated records. Raises an exception if the column doesn't
         exist.
@@ -356,7 +363,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def remove_many_by_ids(
         self,
-        ids: list[str],
+        ids: List[str],
         column: str = "id",
         session: Optional[AsyncSession] = None,
     ) -> int:
