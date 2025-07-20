@@ -240,9 +240,7 @@ class Repository(Generic[EntityModel]):
         """
         if not session:
             raise NotExistedSessionException("session is not existed")
-        db_model = await self.get_one_by_id(
-            session, id_, column=column, with_for_update=True
-        )
+        db_model = await self.get_one_by_id(id_, column, True)
         if not db_model:
             raise NotFoundException(
                 f"{self.model.__tablename__} {column}={id_} not found.",
@@ -254,7 +252,6 @@ class Repository(Generic[EntityModel]):
 
         try:
             await session.commit()
-            await session.refresh(db_model)
             return db_model
         except IntegrityError:
             raise IntegrityConflictException(
@@ -294,7 +291,7 @@ class Repository(Generic[EntityModel]):
         updates = {str(id): update for id, update in updates.items() if update}
         ids = list(updates.keys())
         db_models = await self.get_many_by_ids(
-            session, ids=ids, column=column, with_for_update=True
+            ids=ids, column=column, with_for_update=True
         )
 
         for db_model in db_models:
@@ -315,8 +312,8 @@ class Repository(Generic[EntityModel]):
         if not return_models:
             return True
 
-        for db_model in db_models:
-            await session.refresh(db_model)
+        # for db_model in db_models:
+        #     await session.refresh(db_model)
 
         return db_models
 
