@@ -11,7 +11,10 @@ class GetLogger:
         self.LOGGER = logging.getLogger(__name__)
         name_to_level = logging.getLevelNamesMapping()
         level: str = os.getenv("LOG_LEVEL", "INFO")
-        logging.basicConfig(level=name_to_level[level])
+        logging.basicConfig(
+            level=name_to_level[level],
+            format="[%(asctime)s] [%(levelname)s] [%(name)s.%(funcName)s] %(message)s",
+        )
 
     def get(self) -> logging.Logger:
         return self.LOGGER
