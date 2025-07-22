@@ -1,3 +1,4 @@
+from typing import List
 import pytest
 
 from src.fifi.exceptions import IntegrityConflictException
@@ -32,25 +33,18 @@ class TestRepositoryCreate:
             second_user = await self.user_repo.create(data=second_user_schema)
 
     async def test_create_many_repository(self, database_provider_test, user_factory):
-        users = [user_factory() for i in range(5)]
-        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        users: List[UserSchema] = [user_factory() for i in range(5)]
+        created_users = await self.user_repo.create_many(data=users)
         for i in range(5):
             assert users[i].username == created_users[i].username
             assert users[i].email == created_users[i].email
             assert users[i].is_active == created_users[i].is_active
 
-        users = [user_factory() for i in range(2)]
-        is_successful = await self.user_repo.create_many(data=users)
-
-        assert is_successful == True
-
     async def test_ceate_many_empty_data_repository(
         self, database_provider_test, user_factory
     ):
         users = []
-        is_successful = await self.user_repo.create_many(users)
-        assert is_successful == False
-        created_users = await self.user_repo.create_many(users, return_models=True)
+        created_users = await self.user_repo.create_many(users)
         assert created_users == users
 
     async def test_create_many_repository_integrity_exception(

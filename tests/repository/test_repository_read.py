@@ -16,6 +16,8 @@ class TestRepositoryRead:
 
         LOGGER.info(f"user id is: {new_user.id}")
         got_user = await self.user_repo.get_one_by_id(id_=new_user.id)
+
+        assert got_user is not None
         LOGGER.info(f"got user model is: {got_user.to_dict()}")
 
         assert got_user.to_dict() == new_user.to_dict()
@@ -26,3 +28,16 @@ class TestRepositoryRead:
         id_ = "example"
         with pytest.raises(EntityException):
             await self.user_repo.get_one_by_id(id_=id_, column="uuid")
+
+    async def test_read_by_ids(self, database_provider_test, user_factory):
+        users_schema = user_factory(count=5)
+        users = await self.user_repo.create_many(data=users_schema)
+
+        users_id = [user.id for user in users]
+        LOGGER.info(f"{users_id=}")
+
+        got_users = await self.user_repo.get_many_by_ids(users_id)
+
+        assert len(got_users) == len(users_id)
+        for user in got_users:
+            assert user.id in users_id

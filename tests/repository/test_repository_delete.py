@@ -38,7 +38,7 @@ class TestRepositoryDelete:
     async def test_delete_many_repository(self, database_provider_test, user_factory):
         users = [user_factory() for i in range(5)]
         LOGGER.info(f"5 users created")
-        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        created_users = await self.user_repo.create_many(data=users)
         is_deleted = await self.user_repo.remove_many_by_ids(
             ids=[user.id for user in created_users]
         )

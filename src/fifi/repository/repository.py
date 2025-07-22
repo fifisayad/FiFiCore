@@ -3,9 +3,11 @@ from typing import (
     Dict,
     Generic,
     List,
+    Literal,
     Optional,
     Type,
     TypeVar,
+    overload,
 )
 
 from sqlalchemy import delete, select
@@ -31,7 +33,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def create(
         self,
-        data: Type[EntitySchema],
+        data: BaseModel,
         session: Optional[AsyncSession] = None,
     ) -> EntityModel:
         """Accepts a Pydantic model, creates a new record in the database, catches
@@ -67,16 +69,13 @@ class Repository(Generic[EntityModel]):
     async def create_many(
         self,
         data: List[EntitySchema],
-        return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> List[EntityModel] | bool:
+    ) -> List[EntityModel]:
         """_summary_
 
         Args:
             session (Optional[AsyncSession]): SQLAlchemy async session
             data (list[EntitySchema]): list of Pydantic models
-            return_models (bool, optional): Should the created models be returned
-                or a boolean indicating they have been created. Defaults to False.
 
         Raises:
             IntegrityConflictException: if creation conflicts with existing data
@@ -89,8 +88,6 @@ class Repository(Generic[EntityModel]):
             raise NotExistedSessionException("session is not existed")
         db_models = [self.model(**d.model_dump()) for d in data]
         if not data:
-            if not return_models:
-                return False
             return db_models
         try:
             session.add_all(db_models)
@@ -101,10 +98,6 @@ class Repository(Generic[EntityModel]):
             )
         except Exception as e:
             raise EntityException(f"Unknown error occurred: {e}") from e
-
-        if not return_models:
-            return True
-
         for m in db_models:
             await session.refresh(m)
 
@@ -223,7 +216,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def update_by_id(
         self,
-        data: Type[EntitySchema],
+        data: BaseModel,
         id_: str,
         column: str = "id",
         session: Optional[AsyncSession] = None,
@@ -270,9 +263,8 @@ class Repository(Generic[EntityModel]):
         self,
         updates: Dict[str, EntitySchema],
         column: str = "id",
-        return_models: bool = False,
         session: Optional[AsyncSession] = None,
-    ) -> List[EntityModel] | bool:
+    ) -> List[EntityModel]:
         """Updates multiple records in the database based on a column value and
         returns the updated records. Raises an exception if the column doesn't
         exist.
@@ -315,13 +307,6 @@ class Repository(Generic[EntityModel]):
             raise IntegrityConflictException(
                 f"{self.model.__tablename__} conflict with existing data.",
             )
-
-        if not return_models:
-            return True
-
-        # for db_model in db_models:
-        #     await session.refresh(db_model)
-
         return db_models
 
     @db_async_session

@@ -13,8 +13,9 @@ class TestRepositoryUpdate:
         new_user = await self.user_repo.create(data=new_user_schema)
 
         LOGGER.info(f"user created: {new_user is not None}")
+        miaad_schema = UserSchema(username="miaad", email="miaad@example.com")
         updated_user = await self.user_repo.update_by_id(
-            data=UserSchema(username="miaad", email="miaad@example.com"),
+            data=miaad_schema,
             id_=new_user.id,
         )
         LOGGER.info(f"user updated: {updated_user.to_dict()}")
@@ -25,7 +26,7 @@ class TestRepositoryUpdate:
     async def test_update_many_repo(self, database_provider_test, user_factory):
         # Creating Fake Users
         users = [user_factory() for i in range(5)]
-        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        created_users = await self.user_repo.create_many(data=users)
         LOGGER.info(f"user(s) created: {[user.username for user in created_users]}")
 
         # Updating Users
@@ -36,9 +37,7 @@ class TestRepositoryUpdate:
                 username=f"miaad{count}", email=f"miaad{count}@example.com"
             )
             count += 1
-        updated_users = await self.user_repo.update_many_by_ids(
-            updates=update_dict, return_models=True
-        )
+        updated_users = await self.user_repo.update_many_by_ids(updates=update_dict)
         updated_users_by_id = {user.id: user for user in updated_users}
         LOGGER.info(f"user updated: {[user.username for user in updated_users]}")
 
@@ -52,7 +51,7 @@ class TestRepositoryUpdate:
     ):
         # Creating Fake Users
         users = [user_factory() for i in range(2)]
-        created_users = await self.user_repo.create_many(data=users, return_models=True)
+        created_users = await self.user_repo.create_many(data=users)
         LOGGER.info(f"user(s) created: {[user.username for user in created_users]}")
 
         # Updating Users
@@ -63,9 +62,7 @@ class TestRepositoryUpdate:
             )
         with pytest.raises(IntegrityConflictException):
             LOGGER.info("Catched IntegrityConflictException")
-            updated_users = await self.user_repo.update_many_by_ids(
-                updates=update_dict, return_models=True
-            )
+            updated_users = await self.user_repo.update_many_by_ids(updates=update_dict)
 
     async def test_update_entity(self, database_provider_test, user_factory):
         # Creating Fake Users

@@ -14,8 +14,16 @@ LOGGER = GetLogger().get()
 
 @pytest.fixture
 def user_factory():
-    def create_user():
-        return UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+    def create_user(count: int = 1):
+        if count == 1:
+            return UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+        elif count > 1:
+            users = []
+            for i in range(count):
+                users.append(
+                    UserSchema(username=fake.name(), email=fake.email(), is_active=True)
+                )
+            return users
 
     return create_user
 
