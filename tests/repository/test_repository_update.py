@@ -20,8 +20,13 @@ class TestRepositoryUpdate:
         )
         LOGGER.info(f"user updated: {updated_user.to_dict()}")
 
-        assert updated_user.id == new_user.id
-        assert updated_user.username == "miaad"
+        got_user = await self.user_repo.get_one_by_id(id_=new_user.id)
+        assert got_user is not None
+        LOGGER.info(f"{got_user.to_dict()=}")
+
+        assert updated_user.id == got_user.id
+        assert updated_user.username == got_user.username
+        assert updated_user.email == got_user.email
 
     async def test_update_many_repo(self, database_provider_test, user_factory):
         # Creating Fake Users
