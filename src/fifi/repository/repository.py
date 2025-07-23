@@ -249,6 +249,7 @@ class Repository(Generic[EntityModel, EntitySchema]):
         values = data.model_dump(exclude_unset=True)
         for k, v in values.items():
             setattr(db_model, k, v)
+        session.add(db_model)
 
         try:
             await session.commit()
