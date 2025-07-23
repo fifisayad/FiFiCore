@@ -13,7 +13,7 @@ class GetLogger:
         level: str = os.getenv("LOG_LEVEL", "INFO")
         logging.basicConfig(
             level=name_to_level[level],
-            format="[%(asctime)s] [%(levelname)s] [%(name)s.%(funcName)s] %(message)s",
+            format="[%(asctime)s] [%(levelname)s] [%(funcName)s] %(message)s",
         )
 
     def get(self) -> logging.Logger:
