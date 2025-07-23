@@ -27,13 +27,13 @@ EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
 
 
 @dataclass
-class Repository(Generic[EntityModel]):
+class Repository(Generic[EntityModel, EntitySchema]):
     model: Type[EntityModel]
 
     @db_async_session
     async def create(
         self,
-        data: BaseModel,
+        data: EntitySchema,
         session: Optional[AsyncSession] = None,
     ) -> EntityModel:
         """Accepts a Pydantic model, creates a new record in the database, catches
@@ -216,7 +216,7 @@ class Repository(Generic[EntityModel]):
     @db_async_session
     async def update_by_id(
         self,
-        data: BaseModel,
+        data: EntitySchema,
         id_: str,
         column: str = "id",
         session: Optional[AsyncSession] = None,
