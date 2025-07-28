@@ -1,4 +1,4 @@
-import json
+import orjson
 import traceback
 from typing import Dict, Optional
 from redis import PubSubError
@@ -44,9 +44,9 @@ class RedisPublisher:
         """
         publish_message = message
         if type(message) == dict:
-            publish_message = json.dumps(message)
+            publish_message = orjson.dumps(message)
         try:
-            await self.redis.publish(self.channel, str(publish_message))
+            await self.redis.publish(self.channel, publish_message)
             self.logger.debug(
                 f"[Publisher-Redis]: published this data: {publish_message} on this channel: {self.channel}"
             )

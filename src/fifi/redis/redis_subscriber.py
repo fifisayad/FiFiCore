@@ -1,5 +1,5 @@
 import asyncio
-import json
+import orjson
 from typing import Dict, List, Optional
 
 from ..helpers.get_logger import GetLogger
@@ -40,7 +40,7 @@ class RedisSubscriber:
         """
         redis_client = await RedisClient.create()
         return cls(redis_client, channel)
-    
+
     def close(self):
         """close.
         cancel subscriber future task...
@@ -59,13 +59,13 @@ class RedisSubscriber:
                 try:
                     self.logger.debug(f"[Subscriber-Redis] Received: {msg}")
                     if msg["type"] == "message":
-                        data = json.loads(msg["data"])
+                        data = orjson.loads(msg["data"])
                         async with self.messages_lock:
                             self.messages.append(data)
                         self.logger.debug(f"[Subscriber-Redis] Received: {data}")
-                except json.JSONDecodeError:
+                except orjson.JSONDecodeError as ex:
                     self.logger.debug(
-                        f"[Subscriber-Redis] Failed to decode message: {msg}"
+                        f"[Subscriber-Redis] Failed to decode message: {str(ex)}"
                     )
         finally:
             self.logger.debug("[Subscriber-Redis]: finally section ...")
