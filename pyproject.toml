@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fificore"
-version = "0.0.10"
+version = "0.0.11"
 description = "FiFi Core is full of tools"
 readme = "README.md"
 authors = [
@@ -18,7 +18,7 @@ classifiers = [
 ]
 keywords = ["core", "db", "utility"]
 dependencies = [
-  "SQLAlchemy", "redis"
+  "SQLAlchemy", "redis", "orjson"
 ]
 requires-python = ">=3.12.0"
 
