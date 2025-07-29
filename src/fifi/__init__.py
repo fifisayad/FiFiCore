@@ -11,6 +11,7 @@ __all__ = [
     "RedisPublisher",
     "Repository",
     "BaseEngine",
+    "BaseService",
 ]
 
 from .data.database_provider import DatabaseProvider
@@ -25,3 +26,4 @@ from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
 from .repository.repository import Repository
 from .engine.base_engine import BaseEngine
+from .service.base_service import BaseService
