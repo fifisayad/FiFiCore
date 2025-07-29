@@ -10,6 +10,7 @@ __all__ = [
     "RedisSubscriber",
     "RedisPublisher",
     "Repository",
+    "BaseEngine",
 ]
 
 from .data.database_provider import DatabaseProvider
@@ -23,3 +24,4 @@ from .helpers.get_logger import GetLogger
 from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
 from .repository.repository import Repository
+from .engine.base_engine import BaseEngine
