@@ -17,10 +17,10 @@ class RedisClient:
     @classmethod
     async def create(
         cls,
-        host: str = os.getenv("REDIS_HOST", "localhost"),
-        port: int = int(os.getenv("REDIS_PORT", 6379)),
-        username: str = os.getenv("REDIS_USERNAME", ""),
-        password: str = os.getenv("REDIS_PASSWORD", ""),
+        host: str | None = None,
+        port: int | None = None,
+        username: str | None = None,
+        password: str | None = None,
     ):
         """create.
         this method create a redis client connection
@@ -33,6 +33,15 @@ class RedisClient:
             username (str): username
             password (str): password
         """
+        if not host:
+            host = os.getenv("REDIS_HOST", "localhost")
+        if not port:
+            port = int(os.getenv("REDIS_PORT", 6379))
+        if not username:
+            username = os.getenv("REDIS_USERNAME", "")
+        if not password:
+            password = os.getenv("REDIS_PASSWORD", "")
+
         kwargs: Dict[str, Any] = {"decode_responses": True}
         if username:
             kwargs["username"] = username

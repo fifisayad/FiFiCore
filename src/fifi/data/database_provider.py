@@ -19,13 +19,13 @@ class DatabaseProvider:
 
     def __init__(
         self,
-        user: str = os.getenv("DATABASE_USER", ""),
-        password: str = os.getenv("DATABASE_PASS", ""),
-        host: str = os.getenv("DATABASE_HOST", ""),
-        port: int = int(os.getenv("DATABASE_PORT", 0)),
-        db_name: str = os.getenv("DATABASE_NAME", ""),
-        db_tech: str = os.getenv("DATABASE_TECH", "sqllite"),
-        db_lib: str = os.getenv("DATABASE_LIB", "aiosqlite"),
+        user: str | None = None,
+        password: str | None = None,
+        host: str | None = None,
+        port: int | None = None,
+        db_name: str | None = None,
+        db_tech: str | None = None,
+        db_lib: str | None = None,
     ):
         """__init__.
 
@@ -40,6 +40,21 @@ class DatabaseProvider:
         """
 
         # TODO: add try catch for raising Exception for DB connection
+        if not user:
+            user = os.getenv("DATABASE_USER", "")
+        if not password:
+            password = os.getenv("DATABASE_PASS", "")
+        if not host:
+            host = os.getenv("DATABASE_HOST", "")
+        if not port:
+            port = int(os.getenv("DATABASE_PORT", 0))
+        if not db_name:
+            db_name = os.getenv("DATABASE_NAME", "")
+        if not db_tech:
+            db_tech = os.getenv("DATABASE_TECH", "sqllite")
+        if not db_lib:
+            db_lib = os.getenv("DATABASE_LIB", "aiosqlite")
+
         self.engine = create_async_engine(
             url="{}+{}://{}:{}@{}:{}/{}".format(
                 db_tech,
