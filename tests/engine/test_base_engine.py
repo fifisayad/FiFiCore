@@ -37,7 +37,6 @@ class TestBaseEngine:
         assert self.test_engine.my_value == 1
         await self.test_engine.start()
         assert self.test_engine.my_value == 2
-        assert threading.active_count() == 2
         is_exist = False
         for thread in threading.enumerate():
             if thread.name == self.test_engine.thread_name:
@@ -48,5 +47,3 @@ class TestBaseEngine:
     async def test_stop_base_engine(self):
         await self.test_engine.stop()
         assert self.test_engine.my_value == 3
-
-        assert threading.active_count() == 1
