@@ -43,10 +43,15 @@ class RedisClient:
             password = os.getenv("REDIS_PASSWORD", "")
 
         kwargs: Dict[str, Any] = {"decode_responses": True}
-        if username:
-            kwargs["username"] = username
-            kwargs["password"] = password
-        redis = await aioredis.from_url(f"redis://{host}:{port}", **kwargs)
+        if password:
+            if username:
+                url = f"redis://{username}:{password}@{host}:{port}"
+            else:
+                url = f"redis://default:{password}@{host}:{port}"
+        else:
+            url = f"redis://{host}:{port}"
+
+        redis = await aioredis.from_url(url, **kwargs)
         return cls(redis)
 
     async def close(self):
