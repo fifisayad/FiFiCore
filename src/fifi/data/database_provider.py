@@ -70,8 +70,6 @@ class DatabaseProvider:
         )
         self.session_maker = async_sessionmaker(self.engine, expire_on_commit=False)
 
-        asyncio.run(self.init_models())
-
     def get_new_seddion(self) -> AsyncSession:
         """get_new_seddion.
         get a new session of session pool.
