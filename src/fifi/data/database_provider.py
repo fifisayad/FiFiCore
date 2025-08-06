@@ -1,8 +1,8 @@
 import os
-import asyncio
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
+from sqlalchemy.pool import NullPool
 
 from ..decorator.singleton import singleton
 from ..models.decorated_base import DecoratedBase
@@ -67,6 +67,7 @@ class DatabaseProvider:
             ),
             echo=False,
             pool_pre_ping=True,
+            poolclass=NullPool,
         )
         self.session_maker = async_sessionmaker(self.engine, expire_on_commit=False)
 
