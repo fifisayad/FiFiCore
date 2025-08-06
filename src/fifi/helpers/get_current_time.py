@@ -4,4 +4,4 @@ from datetime import datetime, UTC
 class GetCurrentTime:
     @staticmethod
     def get() -> datetime:
-        return datetime.now(UTC)
+        return datetime.now(UTC).replace(tzinfo=None)
