@@ -1,4 +1,5 @@
 import asyncio
+import threading
 import orjson
 from typing import Dict, List, Optional
 
@@ -28,7 +29,8 @@ class RedisSubscriber:
         self.messages_lock = asyncio.Lock()
         self.messages = list()
         # create task for getting messages on the channel
-        self.task = asyncio.create_task(self.subscriber())
+        self.thread = threading.Thread(target=self.start, daemon=True)
+        self.thread.start()
 
     @classmethod
     async def create(cls, channel: str):
@@ -41,11 +43,27 @@ class RedisSubscriber:
         redis_client = await RedisClient.create()
         return cls(redis_client, channel)
 
+    def start(self):
+        self.loop = asyncio.new_event_loop()
+
+        self.loop.create_task(self.subscriber())
+        try:
+            self.loop.run_forever()
+        finally:
+            # Cancel any pending tasks on shutdown
+            tasks = asyncio.all_tasks(self.loop)
+            for task in tasks:
+                task.cancel()
+            self.loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
+            self.loop.close()
+            self.logger.info("Redis Thread Event loop closed.")
+
     def close(self):
         """close.
         cancel subscriber future task...
         """
-        self.task.cancel()
+        self.loop.call_soon_threadsafe(self.loop.stop)
+        self.thread.join()
 
     async def subscriber(self):
         """subscriber.
@@ -67,12 +85,16 @@ class RedisSubscriber:
                     self.logger.debug(
                         f"[Subscriber-Redis] Failed to decode message: {str(ex)}"
                     )
+        except asyncio.CancelledError:
+            self.logger.debug("Task cancelled, exiting gracefully.")
+            raise
+        except GeneratorExit:
+            self.logger.debug("GeneratorExit: shutting down")
+            raise
         finally:
-            self.logger.debug("[Subscriber-Redis]: finally section ...")
-            await self.pubsub.unsubscribe()
-            await self.pubsub.punsubscribe()
-            await self.redis_client.redis.aclose()
-            return
+            await self.pubsub.aclose()
+            await self.redis_client.close()
+            self.logger.debug("closing redis subscriber....")
 
     async def get_messages(self) -> List:
         """get_messages.

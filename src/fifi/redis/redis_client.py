@@ -58,4 +58,4 @@ class RedisClient:
         """close.
         close redis connection
         """
-        await self.redis.close()
+        await self.redis.aclose()
