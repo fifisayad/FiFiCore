@@ -120,7 +120,7 @@ class RedisSubscriber:
         try:
             result = self.messages[-1]
         except IndexError:
-            self.logger.warning(
+            self.logger.debug(
                 f"[Subscriber-Redis] there is no messages on the {self.channel} channel"
             )
             return None
