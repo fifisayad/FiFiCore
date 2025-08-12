@@ -1,4 +1,5 @@
 import asyncio
+import traceback
 import threading
 from abc import ABC, abstractmethod
 from ..helpers.get_logger import GetLogger
@@ -38,6 +39,7 @@ class BaseEngine(ABC):
         Starts the engine by running the `preprocess()` coroutine, launching a new thread
         to host the event loop, and scheduling the `process()` coroutine within that loop.
         """
+        LOGGER.info(f"starting {self.name}....")
         await self.preprocess()
         self.thread = threading.Thread(target=self.start_loop)
         self.thread_name = self.thread.name
@@ -53,7 +55,11 @@ class BaseEngine(ABC):
         Logs when the loop is stopped.
         """
         asyncio.set_event_loop(self.new_loop)
-        self.new_loop.run_forever()
+        try:
+            self.new_loop.run_forever()
+        except Exception as ex:
+            msg_error = traceback.format_exc()
+            LOGGER.error(f"engine crash {msg_error}")
         LOGGER.info(
             f"Event loop of engine {self.name} in thread {self.thread_name} stopped"
         )
