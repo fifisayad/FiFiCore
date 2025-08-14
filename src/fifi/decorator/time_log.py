@@ -1,6 +1,9 @@
 import time
+import logging
 from functools import wraps
-from ..helpers.get_logger import GetLogger
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def timeit_log(func):
@@ -9,8 +12,7 @@ def timeit_log(func):
         start = time.perf_counter()
         result = func(*args, **kwargs)
         duration = time.perf_counter() - start
-        logger = GetLogger().get()
-        logger.info(f"[{func.__name__}] executed in {duration:.4f} seconds")
+        LOGGER.info(f"[{func.__name__}] executed in {duration:.4f} seconds")
         return result
 
     return wrapper
