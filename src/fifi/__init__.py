@@ -3,6 +3,7 @@ __all__ = [
     "db_async_session",
     "singleton",
     "timeit_log",
+    "log_exception",
     "DecoratedBase",
     "DatetimeDecoratedBase",
     "RedisChannelSubException",
@@ -18,6 +19,7 @@ from .data.database_provider import DatabaseProvider
 from .decorator.db_async_session import db_async_session
 from .decorator.singleton import singleton
 from .decorator.time_log import timeit_log
+from .decorator.log_exception import log_exception
 from .models.decorated_base import DecoratedBase
 from .models.datetime_decorated_base import DatetimeDecoratedBase
 from .exceptions.exceptions import RedisChannelSubException

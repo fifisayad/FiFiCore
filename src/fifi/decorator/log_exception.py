@@ -3,12 +3,13 @@ import logging
 import traceback
 from datetime import datetime
 import os
+from typing import Optional
 
 
 LOGGER = logging.getLogger(__name__)
 
 
-def log_exceptions_to_root(root_path):
+def log_exception(root_path: Optional[str] = None):
     """
     Decorator factory that logs exceptions to a file under root_path,
     named as <ClassName>_<method_name>.log.
