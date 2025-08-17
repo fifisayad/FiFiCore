@@ -36,7 +36,7 @@ class BaseEngine(ABC):
             multi_process (bool): If True, run the engine in a multiprocessing.Process
                                 instead of a threading.Thread. Defaults to False.
         """
-        self.use_process = multi_process
+        self.multi_process = multi_process
         self.new_loop = asyncio.new_event_loop()
         self.worker = None  # can be Thread or Process depending on flag
 
@@ -47,10 +47,18 @@ class BaseEngine(ABC):
         """
         LOGGER.info(f"starting {self.name}....")
         await self.preprocess()
-        self.thread = threading.Thread(target=self.start_loop)
-        self.thread_name = self.thread.name
-        self.thread.start()
-        asyncio.run_coroutine_threadsafe(self.process(), self.new_loop)
+
+        if self.multi_process:
+            self.worker = multiprocessing.Process(target=self.start_loop)
+        else:
+            self.worker = threading.Thread(target=self.start_loop)
+
+        self.thread_name = self.worker.name
+        self.worker.start()
+
+        # only valid when using threads
+        if not self.multi_process:
+            asyncio.run_coroutine_threadsafe(self.process(), self.new_loop)
 
     def start_loop(self):
         """
