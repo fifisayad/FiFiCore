@@ -2,6 +2,8 @@ import asyncio
 import traceback
 import threading
 import multiprocessing
+
+from multiprocessing.synchronize import Event
 from abc import ABC, abstractmethod
 from ..helpers.get_logger import GetLogger
 
@@ -38,7 +40,10 @@ class BaseEngine(ABC):
         """
         self.multi_process = multi_process
         self.new_loop = asyncio.new_event_loop()
-        self.worker = None  # can be Thread or Process depending on flag
+        # worker can be Thread or Process depending on multi_process flag
+        # stop_event only used in process mode
+        self.worker = None
+        self.stop_event = None
 
     async def start(self):
         """
@@ -49,7 +54,10 @@ class BaseEngine(ABC):
         await self.preprocess()
 
         if self.multi_process:
-            self.worker = multiprocessing.Process(target=self.start_loop)
+            self.stop_event = multiprocessing.Event()
+            self.worker = multiprocessing.Process(
+                target=self.start_loop, args=(self.stop_event,)
+            )
         else:
             self.worker = threading.Thread(target=self.start_loop)
 
@@ -60,7 +68,7 @@ class BaseEngine(ABC):
         if not self.multi_process:
             asyncio.run_coroutine_threadsafe(self.process(), self.new_loop)
 
-    def start_loop(self):
+    def start_loop(self, stop_event: Event = None):
         """
         Runs the event loop in the current thread.
 
@@ -69,14 +77,30 @@ class BaseEngine(ABC):
         Logs when the loop is stopped.
         """
         asyncio.set_event_loop(self.new_loop)
+
+        async def runner():
+            task = asyncio.create_task(self.process())
+
+            # keep checking stop_event (only in process mode)
+            if stop_event is not None:
+                while not stop_event.is_set():
+                    await asyncio.sleep(0.2)
+                # stop requested → run postprocess inside child
+                await self.postprocess()
+                self.new_loop.stop()
+            else:
+                await task  # thread mode will just run process()
+
         try:
+            self.new_loop.create_task(runner())
             self.new_loop.run_forever()
-        except Exception as ex:
+        except Exception:
             msg_error = traceback.format_exc()
             LOGGER.error(f"engine crash {msg_error}")
-        LOGGER.info(
-            f"Event loop of engine {self.name} in thread {self.thread_name} stopped"
-        )
+        finally:
+            LOGGER.info(
+                f"Event loop of engine {self.name} in worker {self.thread_name} stopped"
+            )
 
     @abstractmethod
     async def preprocess(self):
@@ -115,7 +139,20 @@ class BaseEngine(ABC):
         Calls the `postprocess()` coroutine, schedules the event loop to stop,
         and joins the engine thread to ensure a clean shutdown.
         """
-        if self.thread:
+        if not self.worker:
+            return
+
+        if self.multi_process:
+            # signal process to shut down gracefully by running postprocess()
+            # we cant use self.worker.terminate() cause we are running in child process
+            # we have to use events to send shutdown signal
+            self.stop_event.set()
+            self.worker.join()
+        else:
+            # thread mode: run postprocess() here
             await self.postprocess()
             self.new_loop.call_soon_threadsafe(self.new_loop.stop)
-            self.thread.join()
+            self.worker.join()
+
+        self.worker = None
+        self.stop_event = None
