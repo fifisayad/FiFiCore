@@ -1,12 +1,18 @@
 import asyncio
 import threading
 import pytest
-
+import time
+from multiprocessing import Value
 from src.fifi import BaseEngine
 from src.fifi import GetLogger
 
 
 LOGGER = GetLogger().get()
+
+
+# ----------------------------
+# Engine classes
+# ----------------------------
 
 
 class MyEngine(BaseEngine):
@@ -28,6 +34,31 @@ class MyEngine(BaseEngine):
             await asyncio.sleep(1)
 
 
+class DummyEngine(BaseEngine):
+    name = "dummy_engine"
+
+    def __init__(self, multi_process=False):
+        super().__init__(multi_process=multi_process)
+        self.preprocessed = False
+        self.postprocessed = False
+        self.counter = Value("i", 0) if multi_process else 0
+
+    async def preprocess(self):
+        self.preprocessed = True
+
+    async def process(self):
+        for _ in range(5):
+            if self.multi_process:
+                with self.counter.get_lock():
+                    self.counter.value += 1
+            else:
+                self.counter += 1
+            await asyncio.sleep(0.1)
+
+    async def postprocess(self):
+        self.postprocessed = True
+
+
 @pytest.mark.asyncio
 class TestBaseEngine:
     test_engine = MyEngine()
@@ -47,3 +78,36 @@ class TestBaseEngine:
     async def test_stop_base_engine(self):
         await self.test_engine.stop()
         assert self.test_engine.my_value == 3
+
+    @pytest.mark.parametrize("multi_process", [False, True])
+    async def test_engine_lifecycle(self, multi_process):
+        LOGGER.info(f"Starting test_engine_lifecycle (multi_process={multi_process})")
+        engine = DummyEngine(multi_process=multi_process)
+
+        # start engine
+        await engine.start()
+        LOGGER.info("Engine started.")
+        assert engine.preprocessed is True
+
+        # give it time to run a bit
+        time.sleep(1.0)
+
+        # stop engine
+        await engine.stop()
+        LOGGER.info("Engine stopped.")
+
+        # in thread mode, postprocess is set in parent
+        if not multi_process:
+            assert engine.postprocessed is True
+            LOGGER.info("Postprocess verified in thread mode.")
+        else:
+            # in process mode, postprocess runs in child, parent can't see the flag
+            assert engine.worker is None
+            LOGGER.info("Worker stopped in process mode.")
+
+        # engine did some work
+        if multi_process:
+            assert engine.counter.value > 0
+        else:
+            assert engine.counter > 0
+        LOGGER.info(f"Engine counter={engine.counter} verified.")
