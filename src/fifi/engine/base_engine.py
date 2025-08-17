@@ -1,6 +1,7 @@
 import asyncio
 import traceback
 import threading
+import multiprocessing
 from abc import ABC, abstractmethod
 from ..helpers.get_logger import GetLogger
 
@@ -26,13 +27,18 @@ class BaseEngine(ABC):
     name: str
     thread_name: str
 
-    def __init__(self):
+    def __init__(self, multi_process: bool = False):
         """
         Initializes the engine instance by creating a new asyncio event loop
         and setting the thread placeholder to None.
+
+        Args:
+            multi_process (bool): If True, run the engine in a multiprocessing.Process
+                                instead of a threading.Thread. Defaults to False.
         """
+        self.use_process = multi_process
         self.new_loop = asyncio.new_event_loop()
-        self.thread = None
+        self.worker = None  # can be Thread or Process depending on flag
 
     async def start(self):
         """
