@@ -13,6 +13,7 @@ __all__ = [
     "Repository",
     "BaseEngine",
     "BaseService",
+    "RedisBaseModel",
 ]
 
 from .data.database_provider import DatabaseProvider
@@ -26,6 +27,7 @@ from .exceptions.exceptions import RedisChannelSubException
 from .helpers.get_logger import GetLogger
 from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
+from .redis.redis_base_model import RedisBaseModel
 from .repository.repository import Repository
 from .engine.base_engine import BaseEngine
 from .service.base_service import BaseService
