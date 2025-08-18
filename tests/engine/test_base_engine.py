@@ -22,14 +22,14 @@ class MyEngine(BaseEngine):
         super().__init__()
         self.my_value = 1
 
-    async def preprocess(self):
+    async def prepare(self):
         self.my_value = 2
 
-    async def postprocess(self):
+    async def postpare(self):
         self.my_value = 3
         LOGGER.info(f"postprocess {self.my_value=}")
 
-    async def process(self):
+    async def execute(self):
         while True:
             await asyncio.sleep(1)
 
@@ -43,10 +43,10 @@ class DummyEngine(BaseEngine):
         self.postprocessed = False
         self.counter = Value("i", 0) if multi_process else 0
 
-    async def preprocess(self):
+    async def prepare(self):
         self.preprocessed = True
 
-    async def process(self):
+    async def execute(self):
         for _ in range(5):
             if self.run_in_process:
                 with self.counter.get_lock():
@@ -55,7 +55,7 @@ class DummyEngine(BaseEngine):
                 self.counter += 1
             await asyncio.sleep(0.1)
 
-    async def postprocess(self):
+    async def postpare(self):
         self.postprocessed = True
 
 
@@ -102,7 +102,7 @@ class TestBaseEngine:
             LOGGER.info("Postprocess verified in thread mode.")
         else:
             # in process mode, postprocess runs in child, parent can't see the flag
-            assert engine.processor is None
+            assert engine.process is None
             LOGGER.info("Worker stopped in process mode.")
 
         # engine did some work
