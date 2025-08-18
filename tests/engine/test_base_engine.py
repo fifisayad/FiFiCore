@@ -38,7 +38,7 @@ class DummyEngine(BaseEngine):
     name = "dummy_engine"
 
     def __init__(self, multi_process=False):
-        super().__init__(multi_process=multi_process)
+        super().__init__(run_in_process=multi_process)
         self.preprocessed = False
         self.postprocessed = False
         self.counter = Value("i", 0) if multi_process else 0
@@ -48,7 +48,7 @@ class DummyEngine(BaseEngine):
 
     async def process(self):
         for _ in range(5):
-            if self.multi_process:
+            if self.run_in_process:
                 with self.counter.get_lock():
                     self.counter.value += 1
             else:

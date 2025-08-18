@@ -29,20 +29,21 @@ class BaseEngine(ABC):
     name: str
     thread_name: str
 
-    def __init__(self, multi_process: bool = False):
+    def __init__(self, run_in_process: bool = False):
         """
         Initializes the engine instance by creating a new asyncio event loop
         and setting the thread placeholder to None.
 
         Args:
-            multi_process (bool): If True, run the engine in a multiprocessing.Process
+            run_in_process (bool): If True, run the engine in a multiprocessing.Process
                                 instead of a threading.Thread. Defaults to False.
         """
-        self.multi_process = multi_process
+        self.run_in_process = run_in_process
         self.new_loop = asyncio.new_event_loop()
         # worker can be Thread or Process depending on multi_process flag
         # stop_event only used in process mode
-        self.worker = None
+        self.therad = None
+        self.processor = None
         self.stop_event = None
 
     async def start(self):
@@ -53,22 +54,38 @@ class BaseEngine(ABC):
         LOGGER.info(f"starting {self.name}....")
         await self.preprocess()
 
-        if self.multi_process:
+        if self.run_in_process:
             self.stop_event = multiprocessing.Event()
-            self.worker = multiprocessing.Process(
-                target=self.start_loop, args=(self.stop_event,)
+            self.processor = multiprocessing.Process(
+                target=self.start_process_loop, args=(self.stop_event,)
             )
+            self.thread_name = self.processor.name
+            self.processor.start()
         else:
-            self.worker = threading.Thread(target=self.start_loop)
-
-        self.thread_name = self.worker.name
-        self.worker.start()
-
-        # only valid when using threads
-        if not self.multi_process:
+            self.thread = threading.Thread(target=self.start_therad_loop)
+            self.thread_name = self.thread.name
+            self.thread.start()
             asyncio.run_coroutine_threadsafe(self.process(), self.new_loop)
 
-    def start_loop(self, stop_event: Event = None):
+    def start_therad_loop(self):
+        """
+        Runs the event loop in the current thread.
+
+        This method is intended to be run in a new thread, and will set the thread-local
+        event loop and run it until stopped.
+        Logs when the loop is stopped.
+        """
+        asyncio.set_event_loop(self.new_loop)
+        try:
+            self.new_loop.run_forever()
+        except Exception as ex:
+            msg_error = traceback.format_exc()
+            LOGGER.error(f"engine crash {msg_error}")
+        LOGGER.info(
+            f"Event loop of engine {self.name} in thread {self.thread_name} stopped"
+        )
+
+    def start_process_loop(self, stop_event: Event):
         """
         Runs the event loop in the current thread.
 
@@ -142,7 +159,7 @@ class BaseEngine(ABC):
         if not self.worker:
             return
 
-        if self.multi_process:
+        if self.run_in_process:
             # signal process to shut down gracefully by running postprocess()
             # we cant use self.worker.terminate() cause we are running in child process
             # we have to use events to send shutdown signal
