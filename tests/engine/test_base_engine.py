@@ -70,8 +70,8 @@ class TestBaseEngine:
         assert self.test_engine.my_value == 2
         is_exist = False
         for thread in threading.enumerate():
-            if thread.name == self.test_engine.thread_name:
-                LOGGER.info(f"{self.test_engine.thread_name=}")
+            if thread.name == self.test_engine.loop_name:
+                LOGGER.info(f"{self.test_engine.loop_name=}")
                 is_exist = True
         assert is_exist
 
@@ -102,12 +102,13 @@ class TestBaseEngine:
             LOGGER.info("Postprocess verified in thread mode.")
         else:
             # in process mode, postprocess runs in child, parent can't see the flag
-            assert engine.worker is None
+            assert engine.processor is None
             LOGGER.info("Worker stopped in process mode.")
 
         # engine did some work
         if multi_process:
             assert engine.counter.value > 0
+            LOGGER.info(f"Engine counter={engine.counter.value} verified.")
         else:
             assert engine.counter > 0
-        LOGGER.info(f"Engine counter={engine.counter} verified.")
+            LOGGER.info(f"Engine counter={engine.counter} verified.")
