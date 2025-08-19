@@ -48,4 +48,7 @@ class RedisBaseModel(HashModel):
     @classmethod
     async def get_by_id(cls, pk: str):
         """Retrieve an object by primary key."""
+        redis_client = await RedisClient.create()
+        cls.Meta.database = redis_client.redis
+        cls.Meta.model_key_prefix = cls.__name__
         return await cls.get(pk)
