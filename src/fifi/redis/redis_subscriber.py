@@ -26,7 +26,7 @@ class RedisSubscriber:
         self.redis = self.redis_client.redis
         self.pubsub = self.redis.pubsub()
         self.channel = channel
-        self.messages_lock = asyncio.Lock()
+        self.messages_lock = threading.Lock()
         self.messages = list()
         # create task for getting messages on the channel
         self.thread = threading.Thread(target=self.start, daemon=True)
@@ -78,7 +78,7 @@ class RedisSubscriber:
                     self.logger.debug(f"[Subscriber-Redis] Received: {msg}")
                     if msg["type"] == "message":
                         data = orjson.loads(msg["data"])
-                        async with self.messages_lock:
+                        with self.messages_lock:
                             self.messages.append(data)
                         self.logger.debug(f"[Subscriber-Redis] Received: {data}")
                 except orjson.JSONDecodeError as ex:
@@ -104,9 +104,9 @@ class RedisSubscriber:
         Returns:
             List: list of messages on the buffer.
         """
-        result = self.messages
-        async with self.messages_lock:
-            self.messages = []
+        with self.messages_lock:
+            result = self.messages[:]
+            self.messages.clear()
         return result
 
     async def get_last_message(self) -> Optional[Dict]:
@@ -117,13 +117,12 @@ class RedisSubscriber:
         Returns:
             Optional[Dict]: return the last message in the buffer
         """
-        try:
+        with self.messages_lock:
+            if not self.messages:
+                self.logger.debug(
+                    f"[Subscriber-Redis] there is no messages on the {self.channel} channel"
+                )
+                return None
             result = self.messages[-1]
-        except IndexError:
-            self.logger.debug(
-                f"[Subscriber-Redis] there is no messages on the {self.channel} channel"
-            )
-            return None
-        async with self.messages_lock:
-            self.messages = []
+            self.messages.clear()
         return result
