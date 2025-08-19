@@ -15,7 +15,9 @@ class RedisBaseModel(HashModel):
 
     class Meta:
         abstract = True  # Prevents this from being stored directly
+        global_key_prefix = ""
         database: Redis
+        model_key_prefix: str
 
     @classmethod
     async def create(cls, **kwargs):
@@ -24,6 +26,7 @@ class RedisBaseModel(HashModel):
         """
         redis_client = await RedisClient.create()
         cls.Meta.database = redis_client.redis
+        cls.Meta.model_key_prefix = cls.__name__
         return cls(**kwargs)
 
     async def save(self, *args, **kwargs):
