@@ -6,7 +6,6 @@ import multiprocessing
 from multiprocessing.synchronize import Event
 from abc import ABC, abstractmethod
 from ..helpers.get_logger import GetLogger
-from ..decorator.log_exception import log_exception
 
 
 LOGGER = GetLogger().get()
@@ -42,10 +41,11 @@ class BaseEngine(ABC):
         self.run_in_process = run_in_process
         self.new_loop = asyncio.new_event_loop()
         # can be Thread or Process depending on multi_process flag
-        # stop_event only used in process mode
+        # stop_process_event only used in process mode
         self.therad = None
         self.process = None
-        self.stop_event = None
+        self.stop_process_event = None
+        self.pipeline_task = None
 
     async def start(self):
         """
@@ -53,12 +53,10 @@ class BaseEngine(ABC):
         to host the event loop, and scheduling the `process()` coroutine within that loop.
         """
         LOGGER.info(f"starting {self.name}....")
-        await self.prepare()
-
         if self.run_in_process:
-            self.stop_event = multiprocessing.Event()
+            self.stop_process_event = multiprocessing.Event()
             self.process = multiprocessing.Process(
-                target=self.start_process_loop, args=(self.stop_event,)
+                target=self.start_process_loop, args=(self.stop_process_event,)
             )
             self.loop_name = self.process.name
             self.process.start()
@@ -66,7 +64,6 @@ class BaseEngine(ABC):
             self.thread = threading.Thread(target=self.start_thread_loop)
             self.loop_name = self.thread.name
             self.thread.start()
-            asyncio.run_coroutine_threadsafe(self.execute(), self.new_loop)
 
     def start_thread_loop(self):
         """
@@ -78,6 +75,7 @@ class BaseEngine(ABC):
         """
         asyncio.set_event_loop(self.new_loop)
         try:
+            self.pipeline_task = self.new_loop.create_task(self.pipeline())
             self.new_loop.run_forever()
         except Exception as ex:
             msg_error = traceback.format_exc()
@@ -86,7 +84,7 @@ class BaseEngine(ABC):
             f"Event loop of engine {self.name} in thread {self.loop_name} stopped"
         )
 
-    def start_process_loop(self, stop_event: Event):
+    def start_process_loop(self, stop_process_event: Event):
         """
         Runs the event loop in the current thread.
 
@@ -99,15 +97,13 @@ class BaseEngine(ABC):
 
         async def runner():
             # Start main process task
-            task = asyncio.create_task(self.execute())
+            self.pipeline_task = asyncio.create_task(self.pipeline())
 
-            # Wait for stop_event signal
-            while not stop_event.is_set():
+            # Wait for stop_process_event signal
+            while not stop_process_event.is_set():
                 await asyncio.sleep(0.2)
 
-            # Stop requested → run postprocess inside child
-            await self.postpare()
-            task.cancel()  # cancel main loop if still running
+            self.pipeline_task.cancel()  # cancel main loop if still running
             self.new_loop.stop()
 
         try:
@@ -121,8 +117,14 @@ class BaseEngine(ABC):
                 f"Event loop of engine {self.name} in process {self.loop_name} stopped"
             )
 
+    async def pipeline(self):
+        await self.prepare()
+        try:
+            await self.execute()
+        finally:
+            await self.postpare()
+
     @abstractmethod
-    @log_exception()
     async def prepare(self):
         """
         Coroutine for performing setup tasks before the main engine logic begins.
@@ -132,7 +134,6 @@ class BaseEngine(ABC):
         pass
 
     @abstractmethod
-    @log_exception()
     async def execute(self):
         """
         Coroutine that contains the main logic of the engine.
@@ -145,7 +146,6 @@ class BaseEngine(ABC):
         pass
 
     @abstractmethod
-    @log_exception()
     async def postpare(self):
         """
         Coroutine for performing cleanup tasks after the engine is stopped.
@@ -170,21 +170,20 @@ class BaseEngine(ABC):
         Calls the `postprocess()` coroutine, schedules the event loop to stop,
         and joins the engine thread to ensure a clean shutdown.
         """
-        if not self.process:
+        if not self.process or not self.stop_process_event:
             return
         # signal process to shut down gracefully by running postprocess()
         # we cant use self.worker.terminate() cause we are running in child process
         # we have to use events to send shutdown signal
-        self.stop_event.set()
+        self.stop_process_event.set()
         self.process.join()
         self.process = None
-        self.stop_event = None
+        self.stop_process_event = None
 
     async def stop_thread(self):
-        if not self.thread:
+        if not self.thread or not self.pipeline_task:
             return
-        # thread mode: run postprocess() here
-        await self.postpare()
+        self.pipeline_task.cancel()
         self.new_loop.call_soon_threadsafe(self.new_loop.stop)
         self.thread.join()
         self.thread = None
