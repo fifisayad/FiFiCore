@@ -6,6 +6,7 @@ import multiprocessing
 from multiprocessing.synchronize import Event
 from abc import ABC, abstractmethod
 from ..helpers.get_logger import GetLogger
+from ..decorator.log_exception import log_exception
 
 
 LOGGER = GetLogger().get()
@@ -121,6 +122,7 @@ class BaseEngine(ABC):
             )
 
     @abstractmethod
+    @log_exception()
     async def prepare(self):
         """
         Coroutine for performing setup tasks before the main engine logic begins.
@@ -130,6 +132,7 @@ class BaseEngine(ABC):
         pass
 
     @abstractmethod
+    @log_exception()
     async def execute(self):
         """
         Coroutine that contains the main logic of the engine.
@@ -142,6 +145,7 @@ class BaseEngine(ABC):
         pass
 
     @abstractmethod
+    @log_exception()
     async def postpare(self):
         """
         Coroutine for performing cleanup tasks after the engine is stopped.
