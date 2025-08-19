@@ -2,7 +2,7 @@ import asyncio
 import threading
 import pytest
 import time
-from multiprocessing import Value
+from multiprocessing import Value, Event
 from src.fifi import BaseEngine
 from src.fifi import GetLogger
 
@@ -23,11 +23,13 @@ class MyEngine(BaseEngine):
         self.my_value = 1
 
     async def prepare(self):
+        LOGGER.info(f"preparing....")
         self.my_value = 2
+        LOGGER.info(f"preparing.... {self.my_value}")
 
     async def postpare(self):
         self.my_value = 3
-        LOGGER.info(f"postprocess {self.my_value=}")
+        LOGGER.info(f"postparing ... {self.my_value=}")
 
     async def execute(self):
         while True:
@@ -39,12 +41,12 @@ class DummyEngine(BaseEngine):
 
     def __init__(self, multi_process=False):
         super().__init__(run_in_process=multi_process)
-        self.preprocessed = False
-        self.postprocessed = False
+        self.preprocessed = Event()
+        self.postprocessed = Event()
         self.counter = Value("i", 0) if multi_process else 0
 
     async def prepare(self):
-        self.preprocessed = True
+        self.preprocessed.set()
 
     async def execute(self):
         for _ in range(5):
@@ -56,7 +58,7 @@ class DummyEngine(BaseEngine):
             await asyncio.sleep(0.1)
 
     async def postpare(self):
-        self.postprocessed = True
+        self.postprocessed.set()
 
 
 @pytest.mark.asyncio
@@ -67,6 +69,7 @@ class TestBaseEngine:
         assert self.test_engine.name == "test_engine"
         assert self.test_engine.my_value == 1
         await self.test_engine.start()
+        await asyncio.sleep(0.5)
         assert self.test_engine.my_value == 2
         is_exist = False
         for thread in threading.enumerate():
@@ -86,8 +89,9 @@ class TestBaseEngine:
 
         # start engine
         await engine.start()
+        await asyncio.sleep(0.5)
         LOGGER.info("Engine started.")
-        assert engine.preprocessed is True
+        assert engine.preprocessed.is_set()
 
         # give it time to run a bit
         time.sleep(1.0)
@@ -98,7 +102,7 @@ class TestBaseEngine:
 
         # in thread mode, postprocess is set in parent
         if not multi_process:
-            assert engine.postprocessed is True
+            assert engine.postprocessed.is_set()
             LOGGER.info("Postprocess verified in thread mode.")
         else:
             # in process mode, postprocess runs in child, parent can't see the flag
