@@ -1,20 +1,41 @@
 import logging
-import os
-
+import coloredlogs
 from ..decorator.singleton import singleton
 
 
-@singleton
-class GetLogger:
-    def __init__(self):
-        # Setup logger
-        self.LOGGER = logging.getLogger(__name__)
-        name_to_level = logging.getLevelNamesMapping()
-        level: str = os.getenv("LOG_LEVEL", "INFO")
-        logging.basicConfig(
-            level=name_to_level[level],
-            format="[%(asctime)s] [%(levelname)s] [%(funcName)s] %(message)s",
-        )
+LOG_FORMAT = "%(asctime)s [%(levelname)s] %(name)s [%(funcName)s]: %(message)s"
 
-    def get(self) -> logging.Logger:
-        return self.LOGGER
+LEVEL_STYLES = {
+    "debug": {"color": "cyan"},
+    "info": {"color": "green"},
+    "warning": {"color": "yellow"},
+    "error": {"color": "red"},
+    "critical": {"color": "white", "bold": True, "background": "red"},
+}
+
+FIELD_STYLES = {
+    "asctime": {"color": "magenta"},
+    "name": {"color": "blue"},
+    "funcName": {"color": "cyan", "bold": True},
+}
+
+
+@singleton
+class LoggerFactory:
+    def __init__(self, level: str = "INFO"):
+        self.level = level.upper()
+
+        # Configure root logger only once
+        root_logger = logging.getLogger()
+        if not root_logger.hasHandlers():
+            coloredlogs.install(
+                level=self.level,
+                logger=root_logger,
+                fmt=LOG_FORMAT,
+                datefmt="%H:%M:%S",
+                field_styles=FIELD_STYLES,
+                level_styles=LEVEL_STYLES,
+            )
+
+    def get(self, name: str = __name__) -> logging.Logger:
+        return logging.getLogger(name)

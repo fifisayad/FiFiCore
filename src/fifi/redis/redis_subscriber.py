@@ -3,8 +3,10 @@ import threading
 import orjson
 from typing import Dict, List, Optional
 
-from ..helpers.get_logger import GetLogger
+from ..helpers.get_logger import LoggerFactory
 from .redis_client import RedisClient
+
+LOGGER = LoggerFactory().get(__name__)
 
 
 class RedisSubscriber:
@@ -21,7 +23,6 @@ class RedisSubscriber:
             redis_client (RedisClient): redis_client
             channel (str): channel
         """
-        self.logger = GetLogger().get()
         self.redis_client = redis_client
         self.redis = self.redis_client.redis
         self.pubsub = self.redis.pubsub()
@@ -56,7 +57,7 @@ class RedisSubscriber:
                 task.cancel()
             self.loop.run_until_complete(asyncio.gather(*tasks, return_exceptions=True))
             self.loop.close()
-            self.logger.info("Redis Thread Event loop closed.")
+            LOGGER.info("Redis Thread Event loop closed.")
 
     def close(self):
         """close.
@@ -71,30 +72,30 @@ class RedisSubscriber:
         it puts on the message buffer.
         """
         await self.pubsub.subscribe(self.channel)
-        self.logger.debug("[Subscriber-Redis] Waiting for messages...")
+        LOGGER.debug("[Subscriber-Redis] Waiting for messages...")
         try:
             async for msg in self.pubsub.listen():
                 try:
-                    self.logger.debug(f"[Subscriber-Redis] Received: {msg}")
+                    LOGGER.debug(f"[Subscriber-Redis] Received: {msg}")
                     if msg["type"] == "message":
                         data = orjson.loads(msg["data"])
                         with self.messages_lock:
                             self.messages.append(data)
-                        self.logger.debug(f"[Subscriber-Redis] Received: {data}")
+                        LOGGER.debug(f"[Subscriber-Redis] Received: {data}")
                 except orjson.JSONDecodeError as ex:
-                    self.logger.debug(
+                    LOGGER.debug(
                         f"[Subscriber-Redis] Failed to decode message: {str(ex)}"
                     )
         except asyncio.CancelledError:
-            self.logger.debug("Task cancelled, exiting gracefully.")
+            LOGGER.debug("Task cancelled, exiting gracefully.")
             raise
         except GeneratorExit:
-            self.logger.debug("GeneratorExit: shutting down")
+            LOGGER.debug("GeneratorExit: shutting down")
             raise
         finally:
             await self.pubsub.aclose()
             await self.redis_client.close()
-            self.logger.debug("closing redis subscriber....")
+            LOGGER.debug("closing redis subscriber....")
 
     async def get_messages(self) -> List:
         """get_messages.
@@ -119,7 +120,7 @@ class RedisSubscriber:
         """
         with self.messages_lock:
             if not self.messages:
-                self.logger.debug(
+                LOGGER.debug(
                     f"[Subscriber-Redis] there is no messages on the {self.channel} channel"
                 )
                 return None

@@ -1,10 +1,10 @@
 from aredis_om.model.model import NotFoundError
 import pytest
 
-from src.fifi import GetLogger, RedisBaseModel
+from src.fifi import LoggerFactory, RedisBaseModel
 
 
-LOGGER = GetLogger().get()
+LOGGER = LoggerFactory().get(__name__)
 
 
 class Product(RedisBaseModel):

@@ -6,8 +6,7 @@ __all__ = [
     "log_exception",
     "DecoratedBase",
     "DatetimeDecoratedBase",
-    "RedisChannelSubException",
-    "GetLogger",
+    "LoggerFactory",
     "RedisSubscriber",
     "RedisPublisher",
     "Repository",
@@ -23,8 +22,7 @@ from .decorator.time_log import timeit_log
 from .decorator.log_exception import log_exception
 from .models.decorated_base import DecoratedBase
 from .models.datetime_decorated_base import DatetimeDecoratedBase
-from .exceptions.exceptions import RedisChannelSubException
-from .helpers.get_logger import GetLogger
+from .helpers.get_logger import LoggerFactory
 from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
 from .redis.redis_base_model import RedisBaseModel

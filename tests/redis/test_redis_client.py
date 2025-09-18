@@ -4,14 +4,14 @@ import pytest
 import pytest_asyncio
 
 from src.fifi import RedisSubscriber, RedisPublisher
-from src.fifi import GetLogger
+from src.fifi import LoggerFactory
 
 
 # TODO: add a test for redis pub-sub time performance
 # TOOD: test get messages in the RedisSubscriber
 
 CHANNEL: str = "test_channel"
-LOGGER = GetLogger().get()
+LOGGER = LoggerFactory().get(__name__)
 
 
 @pytest_asyncio.fixture
