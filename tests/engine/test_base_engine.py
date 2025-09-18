@@ -4,10 +4,10 @@ import pytest
 import time
 from multiprocessing import Value, Event
 from src.fifi import BaseEngine
-from src.fifi import GetLogger
+from src.fifi import LoggerFactory
 
 
-LOGGER = GetLogger().get()
+LOGGER = LoggerFactory().get(__name__)
 
 
 # ----------------------------

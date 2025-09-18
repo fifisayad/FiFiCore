@@ -4,12 +4,12 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 
 from src.fifi import DatetimeDecoratedBase
-from src.fifi import GetLogger
+from src.fifi import LoggerFactory
 from faker import Faker
 
 
 fake = Faker()
-LOGGER = GetLogger().get()
+LOGGER = LoggerFactory().get(__name__)
 
 
 @pytest.fixture

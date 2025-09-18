@@ -5,10 +5,10 @@ import multiprocessing
 
 from multiprocessing.synchronize import Event
 from abc import ABC, abstractmethod
-from ..helpers.get_logger import GetLogger
+from ..helpers.get_logger import LoggerFactory
 
 
-LOGGER = GetLogger().get()
+LOGGER = LoggerFactory().get(__name__)
 
 
 class BaseEngine(ABC):

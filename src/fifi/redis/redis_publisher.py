@@ -3,8 +3,10 @@ import traceback
 from typing import Dict, Optional
 from redis import PubSubError
 
-from ..helpers.get_logger import GetLogger
+from ..helpers.get_logger import LoggerFactory
 from .redis_client import RedisClient
+
+LOGGER = LoggerFactory().get()
 
 
 class RedisPublisher:
@@ -19,7 +21,7 @@ class RedisPublisher:
             redis_client (RedisClient): redis_client
             channel (str): channel name
         """
-        self.logger = GetLogger().get()
+
         self.redis_client = redis_client
         self.redis = self.redis_client.redis
         self.channel = channel
@@ -47,9 +49,9 @@ class RedisPublisher:
             publish_message = orjson.dumps(message)
         try:
             await self.redis.publish(self.channel, publish_message)
-            self.logger.debug(
+            LOGGER.debug(
                 f"[Publisher-Redis]: published this data: {publish_message} on this channel: {self.channel}"
             )
         except PubSubError:
             error_message = traceback.format_exc()
-            self.logger.error(f"[Publisher-Redis] pubsub error: {error_message}")
+            LOGGER.error(f"[Publisher-Redis] pubsub error: {error_message}")
