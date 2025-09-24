@@ -7,9 +7,6 @@ from src.fifi import RedisSubscriber, RedisPublisher
 from src.fifi import LoggerFactory
 
 
-# TODO: add a test for redis pub-sub time performance
-# TOOD: test get messages in the RedisSubscriber
-
 CHANNEL: str = "test_channel"
 LOGGER = LoggerFactory().get(__name__)
 
