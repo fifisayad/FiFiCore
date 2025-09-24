@@ -5,6 +5,7 @@ from typing import Dict, List, Optional
 
 from ..helpers.get_logger import LoggerFactory
 from .redis_client import RedisClient
+from ..decorator.log_exception import log_exception
 
 LOGGER = LoggerFactory().get(__name__)
 
@@ -66,6 +67,7 @@ class RedisSubscriber:
         self.loop.call_soon_threadsafe(self.loop.stop)
         self.thread.join()
 
+    @log_exception()
     async def subscriber(self):
         """subscriber.
         it subscribe the channel and also listen to the channel and if there is any message
