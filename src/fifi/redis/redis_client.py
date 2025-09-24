@@ -42,7 +42,6 @@ class RedisClient:
         if not password:
             password = os.getenv("REDIS_PASSWORD", "")
 
-        kwargs: Dict[str, Any] = {"decode_responses": True}
         if password:
             if username:
                 url = f"redis://{username}:{password}@{host}:{port}"
@@ -51,7 +50,14 @@ class RedisClient:
         else:
             url = f"redis://{host}:{port}"
 
-        redis = await aioredis.from_url(url, **kwargs)
+        redis = await aioredis.from_url(
+            url,
+            decode_responses=True,
+            socket_timeout=5,  # timeout for read/write ops
+            socket_connect_timeout=5,  # timeout for initial connection
+            retry_on_timeout=True,
+            health_check_interval=30,
+        )
         return cls(redis)
 
     async def close(self):
