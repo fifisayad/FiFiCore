@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class IndicatorType(Enum):
+class IndicatorType(str, Enum):
     RSI = "rsi"
     MACD = "macd"
     SMA = "sma"
