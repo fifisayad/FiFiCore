@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Union, Annotated, Literal
 
 from ..enums.exchanges import Exchange
@@ -16,8 +16,14 @@ class BaseIndicatorRequest(BaseModel):
 # --- RSI specific ---
 class RSISubscriptionRequest(BaseIndicatorRequest):
     indicator: Literal[IndicatorType.RSI]
-    period: Literal[5, 10, 14] = 14
+    period: int = 14
     timeframe: Literal["1m", "5m"] = "1m"
+
+    @field_validator("period")
+    def must_be_positive(cls, v):
+        if v <= 0:
+            raise ValueError("period must be greater than 0")
+        return v
 
 
 IndicatorSubscriptionRequest = Annotated[
