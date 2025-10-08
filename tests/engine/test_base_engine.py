@@ -68,7 +68,7 @@ class TestBaseEngine:
     async def test_start_base_engine(self):
         assert self.test_engine.name == "test_engine"
         assert self.test_engine.my_value == 1
-        await self.test_engine.start()
+        self.test_engine.start()
         await asyncio.sleep(0.5)
         assert self.test_engine.my_value == 2
         is_exist = False
@@ -88,7 +88,7 @@ class TestBaseEngine:
         engine = DummyEngine(multi_process=multi_process)
 
         # start engine
-        await engine.start()
+        engine.start()
         await asyncio.sleep(0.5)
         LOGGER.info("Engine started.")
         assert engine.preprocessed.is_set()

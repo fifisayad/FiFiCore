@@ -47,7 +47,7 @@ class BaseEngine(ABC):
         self.stop_process_event = None
         self.pipeline_task = None
 
-    async def start(self):
+    def start(self):
         """
         Starts the engine by running the `preprocess()` coroutine, launching a new thread
         to host the event loop, and scheduling the `process()` coroutine within that loop.
