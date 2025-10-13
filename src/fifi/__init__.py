@@ -13,6 +13,7 @@ __all__ = [
     "BaseEngine",
     "BaseService",
     "RedisBaseModel",
+    "MonitoringSHMRepository",
 ]
 
 from .data.database_provider import DatabaseProvider
@@ -27,5 +28,6 @@ from .redis.redis_subscriber import RedisSubscriber
 from .redis.redis_publisher import RedisPublisher
 from .redis.redis_base_model import RedisBaseModel
 from .repository.repository import Repository
+from .repository.monitoring_shm_repository import MonitoringSHMRepository
 from .engine.base_engine import BaseEngine
 from .service.base_service import BaseService
