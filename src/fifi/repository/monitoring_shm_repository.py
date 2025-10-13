@@ -3,6 +3,9 @@ from multiprocessing.shared_memory import SharedMemory
 from typing import Any, Dict, List
 
 from ..enums import Market, MarketStat, Candle
+from ..helpers.get_logger import LoggerFactory
+
+LOGGER = LoggerFactory().get(__name__)
 
 
 class MonitoringSHMRepository:
@@ -49,16 +52,22 @@ class MonitoringSHMRepository:
             self.connect_candles_shm()
 
         # access to arrays
-        self.stats = np.ndarray(
-            shape=(len(markets), self.stats_length),
-            dtype=np.double,
-            buffer=self.stats_sm.buf,
-        )
-        self.candles = np.ndarray(
-            shape=(len(markets), self.candles_specs_length, self.candles_length),
-            dtype=np.double,
-            buffer=self.candles_sm.buf,
-        )
+        try:
+            self.stats = np.ndarray(
+                shape=(len(markets), self.stats_length),
+                dtype=np.double,
+                buffer=self.stats_sm.buf,
+            )
+            self.candles = np.ndarray(
+                shape=(len(markets), self.candles_specs_length, self.candles_length),
+                dtype=np.double,
+                buffer=self.candles_sm.buf,
+            )
+        except TypeError:
+            LOGGER.error(
+                f"It probably happens because of markets configuration not equalt to monitoring service...."
+            )
+            raise
         # initial value
         if create:
             self.stats.fill(0)
