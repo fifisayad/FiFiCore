@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fificore"
-version = "0.0.34"
+version = "0.0.35"
 description = "FiFi Core is full of tools"
 readme = "README.md"
 authors = [
