@@ -154,16 +154,16 @@ class BaseEngine(ABC):
         """
         pass
 
-    async def stop(self):
+    def stop(self):
         """
         Stops the engine gracefully.
 
         Calls the `postprocess()` coroutine, schedules the event loop to stop,
         and joins the engine thread to ensure a clean shutdown.
         """
-        await self.stop_process() if self.run_in_process else await self.stop_thread()
+        self.stop_process() if self.run_in_process else self.stop_thread()
 
-    async def stop_process(self):
+    def stop_process(self):
         """
         Stops the process gracefully.
 
@@ -180,7 +180,7 @@ class BaseEngine(ABC):
         self.process = None
         self.stop_process_event = None
 
-    async def stop_thread(self):
+    def stop_thread(self):
         if not self.thread or not self.pipeline_task:
             return
         self.pipeline_task.cancel()
