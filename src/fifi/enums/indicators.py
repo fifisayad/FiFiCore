@@ -5,3 +5,4 @@ class IndicatorType(str, Enum):
     RSI = "rsi"
     MACD = "macd"
     SMA = "sma"
+    ATR = "atr"
