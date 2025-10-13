@@ -18,7 +18,7 @@ classifiers = [
 ]
 keywords = ["core", "db", "utility"]
 dependencies = [
-  "SQLAlchemy", "redis", "orjson", "redis-om", "coloredlogs"
+  "SQLAlchemy", "redis", "orjson", "redis-om", "coloredlogs", "numpy"
 ]
 requires-python = ">=3.12.0"
 

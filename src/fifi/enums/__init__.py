@@ -9,6 +9,7 @@ __all__ = [
     "OrderType",
     "PositionSide",
     "PositionStatus",
+    "MarketStat",
 ]
 
 from .asset import Asset
@@ -21,3 +22,4 @@ from .order_status import OrderStatus
 from .order_type import OrderType
 from .position_side import PositionSide
 from .position_status import PositionStatus
+from .market_stat import MarketStat
