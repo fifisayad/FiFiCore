@@ -88,11 +88,13 @@ class MonitoringSHMRepository:
 
     def close_candles(self) -> None:
         self.candles_sm.close()
-        self.candles_sm.unlink()
+        if not self.reader:
+            self.candles_sm.unlink()
 
     def close_stat(self) -> None:
         self.stats_sm.close()
-        self.stats_sm.unlink()
+        if not self.reader:
+            self.stats_sm.unlink()
 
     def get_candles(self, market: Market) -> np.ndarray:
         return self.candles[self.row_index[market]]
