@@ -60,7 +60,7 @@ class TestMonitoringSHMRepository:
                 market=Market.BTCUSD, close_prices=np.zeros(20)
             )
         with pytest.raises(Exception):
-            reader_repo.set_current_candle(market=Market.ETHUSD, value=321432)
+            reader_repo.set_current_candle_time(market=Market.ETHUSD, value=321432)
         with pytest.raises(Exception):
             reader_repo.set_last_trade(market=Market.ETHUSD, value=321432)
         with pytest.raises(Exception):
