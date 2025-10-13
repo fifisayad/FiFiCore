@@ -2,8 +2,7 @@ import numpy as np
 from multiprocessing.shared_memory import SharedMemory
 from typing import Any, Dict, List
 
-from ..enums import Market
-from ..enums import MarketStat
+from ..enums import Market, MarketStat, Candle
 
 
 class MonitoringSHMRepository:
@@ -11,10 +10,11 @@ class MonitoringSHMRepository:
     stats: np.ndarray
     stats_length: int
     stats_sm: SharedMemory
-    close_prices_name: str = "close_prices_data"
-    close_prices: np.ndarray
-    close_prices_length: int = 200
-    close_prices_sm: SharedMemory
+    candles_name: str = "candle_data"
+    candles: np.ndarray
+    candles_length: int = 200
+    candles_specs_length: int
+    candles_sm: SharedMemory
     reader: bool
 
     row_index: Dict[Market, int]
@@ -27,6 +27,7 @@ class MonitoringSHMRepository:
         for i in range(len(markets)):
             self.row_index[markets[i]] = i
         self.stats_length = MarketStat.__len__()
+        self.candles_specs_length = Candle.__len__()
 
         if create:
             self.reader = False
@@ -37,15 +38,15 @@ class MonitoringSHMRepository:
                 self.close_stat()
                 self.create_stat_shm()
             try:
-                self.create_close_prices_shm()
+                self.create_candles_shm()
             except FileExistsError:
-                self.connect_close_prices_shm()
-                self.close_close_prices()
-                self.create_close_prices_shm()
+                self.connect_candles_shm()
+                self.close_candles()
+                self.create_candles_shm()
         else:
             self.reader = True
             self.connect_stat_shm()
-            self.connect_close_prices_shm()
+            self.connect_candles_shm()
 
         # access to arrays
         self.stats = np.ndarray(
@@ -53,51 +54,93 @@ class MonitoringSHMRepository:
             dtype=np.double,
             buffer=self.stats_sm.buf,
         )
-        self.close_prices = np.ndarray(
-            shape=(len(markets), self.close_prices_length),
+        self.candles = np.ndarray(
+            shape=(len(markets), self.candles_specs_length, self.candles_length),
             dtype=np.double,
-            buffer=self.close_price_sm.buf,
+            buffer=self.candles_sm.buf,
         )
         # initial value
         if create:
             self.stats.fill(0)
-            self.close_prices.fill(0)
+            self.candles.fill(0)
 
     def create_stat_shm(self) -> None:
         stat_size = len(self.row_index) * self.stats_length * 8
         self.stats_sm = SharedMemory(name=self.stat_name, create=True, size=stat_size)
 
-    def create_close_prices_shm(self) -> None:
-        close_prices_size = len(self.row_index) * self.close_prices_length * 8
-        self.close_price_sm = SharedMemory(
-            name=self.close_prices_name, create=True, size=close_prices_size
+    def create_candles_shm(self) -> None:
+        candles_size = (
+            len(self.row_index) * self.candles_specs_length * self.candles_length * 8
+        )
+        self.candles_sm = SharedMemory(
+            name=self.candles_name, create=True, size=candles_size
         )
 
     def connect_stat_shm(self) -> None:
         self.stats_sm = SharedMemory(name=self.stat_name)
 
-    def connect_close_prices_shm(self) -> None:
-        self.close_price_sm = SharedMemory(name=self.close_prices_name)
+    def connect_candles_shm(self) -> None:
+        self.candles_sm = SharedMemory(name=self.candles_name)
 
     def close(self) -> None:
-        self.close_close_prices()
+        self.close_candles()
         self.close_stat()
 
-    def close_close_prices(self) -> None:
-        self.close_price_sm.close()
-        self.close_price_sm.unlink()
+    def close_candles(self) -> None:
+        self.candles_sm.close()
+        self.candles_sm.unlink()
 
     def close_stat(self) -> None:
         self.stats_sm.close()
         self.stats_sm.unlink()
 
+    def get_candles(self, market: Market) -> np.ndarray:
+        return self.candles[self.row_index[market]]
+
+    def set_candles(self, market: Market, candles: np.ndarray) -> None:
+        if self.reader:
+            raise Exception("Reader couldn't set the value!!!")
+        self.candles[self.row_index[market]] = candles
+
     def get_close_prices(self, market: Market) -> np.ndarray:
-        return self.close_prices[self.row_index[market]]
+        return self.candles[self.row_index[market]][Candle.CLOSE.value]
 
     def set_close_prices(self, market: Market, close_prices: np.ndarray) -> None:
         if self.reader:
             raise Exception("Reader couldn't set the value!!!")
-        self.close_prices[self.row_index[market]] = close_prices
+        self.candles[self.row_index[market]][Candle.CLOSE.value] = close_prices
+
+    def get_open_prices(self, market: Market) -> np.ndarray:
+        return self.candles[self.row_index[market]][Candle.OPEN.value]
+
+    def set_open_prices(self, market: Market, open_prices: np.ndarray) -> None:
+        if self.reader:
+            raise Exception("Reader couldn't set the value!!!")
+        self.candles[self.row_index[market]][Candle.OPEN.value] = open_prices
+
+    def get_high_prices(self, market: Market) -> np.ndarray:
+        return self.candles[self.row_index[market]][Candle.HIGH.value]
+
+    def set_high_prices(self, market: Market, high_prices: np.ndarray) -> None:
+        if self.reader:
+            raise Exception("Reader couldn't set the value!!!")
+        self.candles[self.row_index[market]][Candle.HIGH.value] = high_prices
+
+    def get_low_prices(self, market: Market) -> np.ndarray:
+        return self.candles[self.row_index[market]][Candle.LOW.value]
+
+    def set_low_prices(self, market: Market, low_prices: np.ndarray) -> None:
+        if self.reader:
+            raise Exception("Reader couldn't set the value!!!")
+        self.candles[self.row_index[market]][Candle.LOW.value] = low_prices
+
+    def get_vols(self, market: Market) -> np.ndarray:
+        return self.candles[self.row_index[market]][Candle.VOL.value]
+
+    def set_vols(self, market: Market, vols: np.ndarray) -> None:
+        if self.reader:
+            raise Exception("Reader couldn't set the value!!!")
+        self.candles[self.row_index[market]][Candle.VOL.value] = vols
 
     def get_stat(self, market: Market, stat: MarketStat) -> Any:
         return self.stats[self.row_index[market]][stat.value]
@@ -107,10 +150,10 @@ class MonitoringSHMRepository:
             raise Exception("Reader couldn't set the value!!!")
         self.stats[self.row_index[market]][stat.value] = value
 
-    def get_current_candle(self, market: Market) -> Any:
+    def get_current_candle_time(self, market: Market) -> Any:
         return self.stats[self.row_index[market]][MarketStat.CANDLE_TIME.value]
 
-    def set_current_candle(self, market: Market, value: Any) -> None:
+    def set_current_candle_time(self, market: Market, value: Any) -> None:
         if self.reader:
             raise Exception("Reader couldn't set the value!!!")
         self.stats[self.row_index[market]][MarketStat.CANDLE_TIME.value] = value
