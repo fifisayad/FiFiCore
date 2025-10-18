@@ -14,3 +14,4 @@ class MarketStat(Enum):
     ATR14 = 7
     ATR7 = 8
     ATR5 = 9
+    ATR3 = 10
