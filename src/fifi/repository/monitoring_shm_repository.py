@@ -1,5 +1,7 @@
 import numpy as np
+from sys import version_info
 from multiprocessing.shared_memory import SharedMemory
+from multiprocessing.resource_tracker import unregister
 from typing import Any, Dict, List
 
 from ..enums import Market, MarketStat, Candle
@@ -86,10 +88,18 @@ class MonitoringSHMRepository:
         )
 
     def connect_stat_shm(self) -> None:
-        self.stats_sm = SharedMemory(name=self.stat_name)
+        if version_info.major == 3 and version_info.minor <= 12:
+            self.stats_sm = SharedMemory(name=self.stat_name)
+            unregister(self.stats_sm._name, "shared_memory")
+        elif version_info.major == 3 and version_info.minor >= 13:
+            self.stats_sm = SharedMemory(name=self.stat_name, track=False)
 
     def connect_candles_shm(self) -> None:
-        self.candles_sm = SharedMemory(name=self.candles_name)
+        if version_info.major == 3 and version_info.minor <= 12:
+            self.candles_sm = SharedMemory(name=self.candles_name)
+            unregister(self.candles_sm._name, "shared_memory")
+        elif version_info.major == 3 and version_info.minor >= 13:
+            self.candles_sm = SharedMemory(name=self.candles_name, track=False)
 
     def close(self) -> None:
         self.close_candles()
