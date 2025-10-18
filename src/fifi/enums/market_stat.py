@@ -10,6 +10,7 @@ class MarketStat(Enum):
     RSI14 = 3
     RSI7 = 4
     RSI5 = 5
-    ATR14 = 6
-    ATR7 = 7
-    ATR5 = 8
+    RSI3 = 6
+    ATR14 = 7
+    ATR7 = 8
+    ATR5 = 9
