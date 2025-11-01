@@ -1,3 +1,4 @@
+from typing import Optional
 import numpy as np
 from functools import wraps
 from sys import version_info
@@ -76,3 +77,11 @@ class SHMBaseRepository:
         self._sm.close()
         if not self.reader:
             self._sm.unlink()
+
+    def extract_data(self, _from: Optional[int] = None, _to: Optional[int] = None):
+        data = self._data
+        if _from:
+            data = data[_from:]
+        if _to:
+            data = data[:_to]
+        return data

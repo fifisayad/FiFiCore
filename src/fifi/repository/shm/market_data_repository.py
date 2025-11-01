@@ -27,14 +27,6 @@ class MarketDataRepository(SHMBaseRepository):
         self.health = HealthDataRepository(name=self._health_name, create=create)
         self.LOGGER = LoggerFactory().get(self._name)
 
-    def extract_data(self, _from: Optional[int] = None, _to: Optional[int] = None):
-        data = self._data
-        if _from:
-            data = data[_from:]
-        if _to:
-            data = data[:_to]
-        return data
-
     def get_closes(
         self, _from: Optional[int] = None, _to: Optional[int] = None
     ) -> np.ndarray:
