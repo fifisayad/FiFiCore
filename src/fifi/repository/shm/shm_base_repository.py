@@ -78,6 +78,10 @@ class SHMBaseRepository:
         if not self.reader:
             self._sm.unlink()
 
+    def new_row(self) -> None:
+        self._data[0].fill(0)
+        self._data = np.roll(self._data, shift=-1, axis=0)
+
     def extract_data(self, _from: Optional[int] = None, _to: Optional[int] = None):
         data = self._data
         if _from:

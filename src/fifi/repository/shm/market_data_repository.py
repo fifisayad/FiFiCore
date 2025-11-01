@@ -64,9 +64,8 @@ class MarketDataRepository(SHMBaseRepository):
         return self._data[-1, MarketData.TIME.value]
 
     @check_reader
-    def create_new_candle(self) -> None:
-        self._data[0].fill(0)
-        self._data = np.roll(self._data, shift=-1, axis=0)
+    def create_candle(self) -> None:
+        self.new_row()
 
     @check_reader
     def set_close_price(self, price: float) -> None:
