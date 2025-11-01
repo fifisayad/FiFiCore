@@ -75,7 +75,7 @@ class SHMBaseRepository:
 
     def close(self) -> None:
         self._sm.close()
-        if not self.reader:
+        if not self._reader:
             self._sm.unlink()
 
     def new_row(self) -> None:
