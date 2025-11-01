@@ -36,3 +36,11 @@ class TestSHMBaseRepository:
         assert np.array_equal(ex_data, data[-3:])
         ex_data = base_repo.extract_data(_to=1)
         assert np.array_equal(ex_data, data[:1])
+
+    def test_new_row(self, create_base_repo):
+        base_repo: SHMBaseRepository = create_base_repo
+        data = np.arange(25).reshape((5, 5))
+        base_repo._data = data
+        base_repo.new_row()
+        assert not base_repo._data[-1].any()
+        assert np.array_equal(data[-1], base_repo._data[-2])
