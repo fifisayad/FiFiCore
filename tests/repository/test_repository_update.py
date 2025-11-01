@@ -9,6 +9,7 @@ class TestRepositoryUpdate:
     user_repo = Repository(UserModel)
 
     async def test_update_by_id(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
 
@@ -29,6 +30,7 @@ class TestRepositoryUpdate:
         assert updated_user.email == got_user.email
 
     async def test_update_many_repo(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         # Creating Fake Users
         users = [user_factory() for i in range(5)]
         created_users = await self.user_repo.create_many(data=users)
@@ -54,6 +56,7 @@ class TestRepositoryUpdate:
     async def test_update_many_by_ids_unique_error(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         # Creating Fake Users
         users = [user_factory() for i in range(2)]
         created_users = await self.user_repo.create_many(data=users)
@@ -70,6 +73,7 @@ class TestRepositoryUpdate:
             updated_users = await self.user_repo.update_many_by_ids(updates=update_dict)
 
     async def test_update_entity(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         # Creating Fake Users
         user = user_factory()
         created_user = await self.user_repo.create(data=user)

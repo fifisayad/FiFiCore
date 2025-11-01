@@ -18,8 +18,12 @@ class DummyModel(DecoratedBase):
 @pytest.mark.asyncio
 class TestDatabaseProvider:
 
+    async def init_models(self, db):
+        await db.init_models()
+
     async def test_database_initializes_correctly(self, database_provider_test):
 
+        await self.init_models(database_provider_test)
         assert isinstance(database_provider_test.engine, AsyncEngine)
         assert isinstance(database_provider_test.session_maker, async_sessionmaker)
 
@@ -35,6 +39,8 @@ class TestDatabaseProvider:
             assert table == "dummy"
 
     async def test_dict_decorated_base(self, database_provider_test):
+        await self.init_models(database_provider_test)
+
         @db_async_session
         async def data_seeder(session: Optional[AsyncSession] = None):
             if not session:
