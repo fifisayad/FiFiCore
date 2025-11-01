@@ -41,3 +41,10 @@ class MarketStatRepository(SHMBaseRepository):
 
     def create_candle(self):
         self.new_row()
+
+    def get_time(self) -> float:
+        return self._data[-1, MarketStat.TIME.value]
+
+    @check_reader
+    def set_time(self, time: float) -> None:
+        self._data[-1, MarketStat.TIME.value] = time

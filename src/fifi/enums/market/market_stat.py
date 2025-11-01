@@ -11,3 +11,4 @@ class MarketStat(Enum):
     ATR5 = 6
     ATR3 = 7
     HMA = 8
+    TIME = 9
