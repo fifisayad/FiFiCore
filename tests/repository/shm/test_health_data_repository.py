@@ -14,9 +14,6 @@ def create_repo():
 class TestHealthDataRepository:
     def test_update(self, create_repo):
         repo: HealthDataRepository = create_repo
-        data = np.asarray([0, time.time()])
-        repo._data = data
-
         assert not repo.is_updated()
 
         repo.set_is_updated()
@@ -24,3 +21,11 @@ class TestHealthDataRepository:
 
         repo.clear_is_updated()
         assert not repo.is_updated()
+
+    def test_time(self, create_repo):
+        repo: HealthDataRepository = create_repo
+        assert repo.get_time() == 0
+
+        t = time.time()
+        repo.set_time(int(t))
+        assert repo.get_time() == int(t)
