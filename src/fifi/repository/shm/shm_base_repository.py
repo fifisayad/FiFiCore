@@ -84,8 +84,10 @@ class SHMBaseRepository:
 
     def extract_data(self, _from: Optional[int] = None, _to: Optional[int] = None):
         data = self._data
-        if _from:
+        if _from and _to:
+            data = data[_from:_to]
+        elif _from:
             data = data[_from:]
-        if _to:
+        elif _to:
             data = data[:_to]
         return data
