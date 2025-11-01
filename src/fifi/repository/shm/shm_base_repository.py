@@ -45,6 +45,22 @@ class SHMBaseRepository:
             self.reader = True
             self.connect()
 
+        # access to arrays
+        try:
+            self._data = np.ndarray(
+                shape=(self._rows, self._columns),
+                dtype=np.double,
+                buffer=self._sm.buf,
+            )
+        except TypeError:
+            self.LOGGER.error(
+                f"It probably happens because of wrong configuration not same as Monitoring Service.."
+            )
+            raise
+        # initial value
+        if create:
+            self._data.fill(0)
+
     def create(self) -> None:
         stat_size = self._rows * self._columns * 8
         self._sm = SharedMemory(name=self._name, create=True, size=stat_size)
