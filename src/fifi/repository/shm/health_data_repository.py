@@ -12,19 +12,19 @@ class HealthDataRepository(SHMBaseRepository):
         )
 
     def is_updated(self) -> bool:
-        return bool(self._data[0][HealthStat.IS_UPDATED.value])
+        return bool(self._data[HealthStat.IS_UPDATED.value])
 
     @check_reader
     def set_is_updated(self) -> None:
-        self._data[0][HealthStat.IS_UPDATED.value] = 1
+        self._data[HealthStat.IS_UPDATED.value] = 1
 
     @check_reader
     def clear_is_updated(self) -> None:
-        self._data[0][HealthStat.IS_UPDATED.value] = 0
+        self._data[HealthStat.IS_UPDATED.value] = 0
 
     def get_time(self) -> None:
-        return self._data[0][HealthStat.TIME.value]
+        return self._data[HealthStat.TIME.value]
 
     @check_reader
     def set_time(self, time: int) -> None:
-        self._data[0][HealthStat.TIME.value] = time
+        self._data[HealthStat.TIME.value] = time
