@@ -49,7 +49,7 @@ class DummyEngine(BaseEngine):
         self.preprocessed.set()
 
     async def execute(self):
-        for _ in range(5):
+        while True:
             if self.run_in_process:
                 with self.counter.get_lock():
                     self.counter.value += 1
@@ -105,9 +105,10 @@ class TestBaseEngine:
             assert engine.postprocessed.is_set()
             LOGGER.info("Postprocess verified in thread mode.")
         else:
-            # in process mode, postprocess runs in child, parent can't see the flag
             assert engine.process is None
             LOGGER.info("Worker stopped in process mode.")
+            assert engine.postprocessed.is_set()
+            LOGGER.info("Postprocess verified in process mode.")
 
         # engine did some work
         if multi_process:
