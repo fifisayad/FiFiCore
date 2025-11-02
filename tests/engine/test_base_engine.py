@@ -79,7 +79,7 @@ class TestBaseEngine:
         assert is_exist
 
     async def test_stop_base_engine(self):
-        await self.test_engine.stop()
+        self.test_engine.stop()
         assert self.test_engine.my_value == 3
 
     @pytest.mark.parametrize("multi_process", [False, True])
@@ -97,7 +97,7 @@ class TestBaseEngine:
         time.sleep(1.0)
 
         # stop engine
-        await engine.stop()
+        engine.stop()
         LOGGER.info("Engine stopped.")
 
         # in thread mode, postprocess is set in parent

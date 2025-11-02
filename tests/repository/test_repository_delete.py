@@ -8,6 +8,7 @@ class TestRepositoryDelete:
     user_repo = Repository(UserModel)
 
     async def test_delete_by_id(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
 
@@ -20,6 +21,7 @@ class TestRepositoryDelete:
     async def test_delete_by_id_with_wrong_colmun(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
 
@@ -36,6 +38,7 @@ class TestRepositoryDelete:
         LOGGER.info(f"user NOW Removed without dummy colmun")
 
     async def test_delete_many_repository(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         users = [user_factory() for i in range(5)]
         LOGGER.info(f"5 users created")
         created_users = await self.user_repo.create_many(data=users)
@@ -48,6 +51,7 @@ class TestRepositoryDelete:
     async def test_delete_many_repository_mix_id(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
         is_deleted = await self.user_repo.remove_many_by_ids(

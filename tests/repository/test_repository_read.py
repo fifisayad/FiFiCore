@@ -11,6 +11,7 @@ class TestRepositoryRead:
     user_repo = Repository(UserModel)
 
     async def test_read_by_id(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
 
@@ -25,11 +26,13 @@ class TestRepositoryRead:
     async def test_read_by_id_column_exception(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         id_ = "example"
         with pytest.raises(EntityException):
             await self.user_repo.get_one_by_id(id_=id_, column="uuid")
 
     async def test_read_by_ids(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         users_schema = user_factory(count=5)
         users = await self.user_repo.create_many(data=users_schema)
 

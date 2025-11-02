@@ -11,6 +11,7 @@ class TestRepositoryCreate:
     user_repo = Repository(UserModel)
 
     async def test_create_repository(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         new_user_schema = user_factory()
         new_user = await self.user_repo.create(data=new_user_schema)
 
@@ -22,6 +23,7 @@ class TestRepositoryCreate:
     async def test_create_integrity_exception_repository(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         first_user_schema = user_factory()
         first_user = await self.user_repo.create(data=first_user_schema)
         LOGGER.info(f"first user data: {first_user.to_dict()}")
@@ -33,6 +35,7 @@ class TestRepositoryCreate:
             second_user = await self.user_repo.create(data=second_user_schema)
 
     async def test_create_many_repository(self, database_provider_test, user_factory):
+        await database_provider_test.init_models()
         users: List[UserSchema] = [user_factory() for i in range(5)]
         created_users = await self.user_repo.create_many(data=users)
         for i in range(5):
@@ -43,6 +46,7 @@ class TestRepositoryCreate:
     async def test_ceate_many_empty_data_repository(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         users = []
         created_users = await self.user_repo.create_many(users)
         assert created_users == users
@@ -50,6 +54,7 @@ class TestRepositoryCreate:
     async def test_create_many_repository_integrity_exception(
         self, database_provider_test, user_factory
     ):
+        await database_provider_test.init_models()
         users = [user_factory() for i in range(3)]
         # copy last user in terms of bring it back
         users.append(users[-1])
