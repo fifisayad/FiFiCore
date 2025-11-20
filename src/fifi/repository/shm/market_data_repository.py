@@ -88,5 +88,25 @@ class MarketDataRepository(SHMBaseRepository):
         self._data[-1, MarketData.PRICE.value] = price
 
     @check_reader
+    def set_vol(self, vol: float) -> None:
+        self._data[-1, MarketData.VOL.value] = vol
+
+    @check_reader
+    def add_vol(self, vol: float) -> None:
+        self._data[-1, MarketData.VOL.value] += vol
+
+    @check_reader
+    def add_seller_vol(self, vol: float) -> None:
+        self._data[-1, MarketData.SELLER_VOL.value] += vol
+
+    @check_reader
+    def add_buyer_vol(self, vol: float) -> None:
+        self._data[-1, MarketData.BUYER_VOL.value] += vol
+
+    @check_reader
+    def add_unique_traders(self, count: int) -> None:
+        self._data[-1, MarketData.UNIQUE_TRADERS.value] += count
+
+    @check_reader
     def set_time(self, time: float) -> None:
         self._data[-1, MarketData.TIME.value] = time

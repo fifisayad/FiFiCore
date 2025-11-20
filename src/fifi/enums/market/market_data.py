@@ -9,3 +9,6 @@ class MarketData(Enum):
     VOL = 4
     TIME = 5
     PRICE = 6
+    SELLER_VOL = 7
+    BUYER_VOL = 8
+    UNIQUE_TRADERS = 9
