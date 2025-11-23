@@ -1,4 +1,5 @@
 import asyncio
+import time
 import traceback
 import threading
 import multiprocessing
@@ -44,7 +45,7 @@ class BaseEngine(ABC):
         # stop_process_event only used in process mode
         self.therad = None
         self.process = None
-        self.stop_process_event = None
+        self.shutdowned = multiprocessing.Event()
         self.pipeline_task = None
 
     def start(self):
@@ -106,16 +107,11 @@ class BaseEngine(ABC):
             self.pipeline_task.cancel()  # cancel main loop if still running
             self.new_loop.stop()
 
-        try:
-            self.new_loop.create_task(runner())
-            self.new_loop.run_forever()
-        except Exception:
-            msg_error = traceback.format_exc()
-            LOGGER.error(f"engine crash {msg_error}")
-        finally:
-            LOGGER.info(
-                f"Event loop of engine {self.name} in process {self.loop_name} stopped"
-            )
+        self.new_loop.create_task(runner())
+        self.new_loop.run_forever()
+        LOGGER.info(
+            f"Event loop of engine {self.name} in process {self.loop_name} stopped"
+        )
 
     async def pipeline(self):
         await self.prepare()
@@ -123,6 +119,7 @@ class BaseEngine(ABC):
             await self.execute()
         finally:
             await self.postpare()
+            self.shutdowned.set()
 
     @abstractmethod
     async def prepare(self):
@@ -176,6 +173,9 @@ class BaseEngine(ABC):
         # we cant use self.worker.terminate() cause we are running in child process
         # we have to use events to send shutdown signal
         self.stop_process_event.set()
+        while not self.shutdowned.is_set():
+            time.sleep(0.5)
+        self.process.terminate()
         self.process.join()
         self.process = None
         self.stop_process_event = None
@@ -185,5 +185,7 @@ class BaseEngine(ABC):
             return
         self.pipeline_task.cancel()
         self.new_loop.call_soon_threadsafe(self.new_loop.stop)
+        while not self.shutdowned.is_set():
+            time.sleep(0.5)
         self.thread.join()
         self.thread = None
