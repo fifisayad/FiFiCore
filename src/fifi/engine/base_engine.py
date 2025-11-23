@@ -1,4 +1,5 @@
 import asyncio
+import signal
 import time
 import traceback
 import threading
@@ -10,6 +11,14 @@ from ..helpers.get_logger import LoggerFactory
 
 
 LOGGER = LoggerFactory().get(__name__)
+
+keyboard_interrupt = False
+
+
+def handle_signal(signum, frame):
+    global keyboard_interrupt
+    print(f"Received signal {signum}, shutting down gracefully...")
+    keyboard_interrupt = True
 
 
 class BaseEngine(ABC):
@@ -93,6 +102,10 @@ class BaseEngine(ABC):
         event loop and run it until stopped.
         Logs when the loop is stopped.
         """
+        # Register handlers for SIGTERM (docker stop) and SIGINT (Ctrl+C)
+        signal.signal(signal.SIGTERM, handle_signal)
+        signal.signal(signal.SIGINT, handle_signal)
+
         self.new_loop = asyncio.new_event_loop()
         asyncio.set_event_loop(self.new_loop)
 
