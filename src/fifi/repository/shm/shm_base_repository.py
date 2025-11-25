@@ -63,8 +63,8 @@ class SHMBaseRepository:
             self._data.fill(0)
 
     def create(self) -> None:
-        stat_size = self._rows * self._columns * 8
-        self._sm = SharedMemory(name=self._name, create=True, size=stat_size)
+        size = self._rows * self._columns * 8
+        self._sm = SharedMemory(name=self._name, create=True, size=size)
 
     def connect(self) -> None:
         if version_info.major == 3 and version_info.minor <= 12:
@@ -80,7 +80,7 @@ class SHMBaseRepository:
 
     def new_row(self) -> None:
         self._data[0].fill(0)
-        self._data = np.roll(self._data, shift=-1, axis=0)
+        self._data[:] = np.roll(self._data, shift=-1, axis=0)
 
     def extract_data(self, _from: Optional[int] = None, _to: Optional[int] = None):
         data = self._data
