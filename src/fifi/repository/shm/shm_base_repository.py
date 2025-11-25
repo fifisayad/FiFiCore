@@ -25,6 +25,7 @@ class SHMBaseRepository:
     _columns: int
     _sm: SharedMemory
     _reader: bool
+    health = None
 
     def __init__(
         self, name: str, rows: int, columns: int, create: bool = False
@@ -74,6 +75,8 @@ class SHMBaseRepository:
             self._sm = SharedMemory(name=self._name, track=False)
 
     def close(self) -> None:
+        if self.health:
+            self.health.close()
         self._sm.close()
         if not self._reader:
             self._sm.unlink()

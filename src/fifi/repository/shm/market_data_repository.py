@@ -23,7 +23,7 @@ class MarketDataRepository(SHMBaseRepository):
             columns=MarketData.__len__(),
             create=create,
         )
-        self._health_name = f"market_health_data_{market.value}_{interval}"
+        self._health_name = f"market_data_health_{market.value}_{interval}"
         self.health = HealthDataRepository(name=self._health_name, create=create)
         self.LOGGER = LoggerFactory().get(self._name)
 

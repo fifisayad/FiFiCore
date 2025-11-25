@@ -18,7 +18,7 @@ class MarketStatRepository(SHMBaseRepository):
         rows: int = 200,
     ) -> None:
         super().__init__(
-            name=f"market_data_{market.value}_{interval}",
+            name=f"market_stat_{market.value}_{interval}",
             rows=rows,
             columns=MarketStat.__len__(),
             create=create,
