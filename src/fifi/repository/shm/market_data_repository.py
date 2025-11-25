@@ -63,6 +63,15 @@ class MarketDataRepository(SHMBaseRepository):
     def get_time(self) -> float:
         return self._data[-1, MarketData.TIME.value]
 
+    def get_seller_vol(self) -> float:
+        return self._data[-1, MarketData.SELLER_VOL.value]
+
+    def get_buyer_vol(self) -> float:
+        return self._data[-1, MarketData.BUYER_VOL.value]
+
+    def get_unique_traders(self) -> float:
+        return self._data[-1, MarketData.UNIQUE_TRADERS.value]
+
     @check_reader
     def create_candle(self) -> None:
         self.new_row()
