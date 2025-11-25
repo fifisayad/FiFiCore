@@ -44,7 +44,7 @@ class SHMBaseRepository:
                 self.close()
                 self.create()
         else:
-            self.reader = True
+            self._reader = True
             self.connect()
 
         # access to arrays
