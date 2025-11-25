@@ -43,4 +43,7 @@ class TestSHMBaseRepository:
         base_repo._data = data
         base_repo.new_row()
         assert not base_repo._data[-1].any()
-        assert np.array_equal(data[-1], base_repo._data[-2])
+        assert np.array_equal(data, base_repo._data)
+        assert data.base is not None
+        assert base_repo._data.base is not None
+        assert np.array_equal(data.base, base_repo._data.base)
