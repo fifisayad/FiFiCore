@@ -74,7 +74,10 @@ class MarketDataRepository(SHMBaseRepository):
 
     @check_reader
     def create_candle(self) -> None:
-        self.new_row()
+        self._data[0].fill(0)
+        # not coming the bad price into last trade
+        self._data[0, MarketData.PRICE.value] = self.get_last_trade()
+        self._data[:] = np.roll(self._data, shift=-1, axis=0)
 
     @check_reader
     def set_close_price(self, price: float) -> None:
