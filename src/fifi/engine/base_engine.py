@@ -64,16 +64,14 @@ class BaseEngine(ABC):
             self.stop_event = multiprocessing.Event()
             self.shutdowned = multiprocessing.Event()
             self.process = multiprocessing.Process(
-                target=self.start_loop, name=self.name, daemon=True
+                target=self.start_loop, name=self.name
             )
             self.loop_name = self.process.name
             self.process.start()
         else:
             self.stop_event = threading.Event()
             self.shutdowned = threading.Event()
-            self.thread = threading.Thread(
-                target=self.start_loop, name=self.name, daemon=True
-            )
+            self.thread = threading.Thread(target=self.start_loop, name=self.name)
             self.loop_name = self.thread.name
             self.thread.start()
 
