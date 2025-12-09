@@ -40,7 +40,9 @@ class MarketStatRepository(SHMBaseRepository):
         self._data[-1, stat.value] = value
 
     def create_candle(self):
-        self.new_row()
+        self._data[0].fill(0)
+        self._data[0, :] = self._data[-1, :]
+        self._data[:] = np.roll(self._data, shift=-1, axis=0)
 
     def get_time(self) -> float:
         return self._data[-1, MarketStat.TIME.value]
