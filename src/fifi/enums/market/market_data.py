@@ -12,3 +12,5 @@ class MarketData(Enum):
     SELLER_VOL = 7
     BUYER_VOL = 8
     UNIQUE_TRADERS = 9
+    BUYER_COUNT = 10
+    SELLER_COUNT = 11
