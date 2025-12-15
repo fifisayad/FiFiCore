@@ -72,6 +72,12 @@ class MarketDataRepository(SHMBaseRepository):
     def get_unique_traders(self) -> float:
         return self._data[-1, MarketData.UNIQUE_TRADERS.value]
 
+    def get_buyer_count(self) -> float:
+        return self._data[-1, MarketData.BUYER_COUNT.value]
+
+    def get_seller_count(self) -> float:
+        return self._data[-1, MarketData.SELLER_COUNT.value]
+
     @check_reader
     def create_candle(self) -> None:
         self._data[0].fill(0)
@@ -118,6 +124,14 @@ class MarketDataRepository(SHMBaseRepository):
     @check_reader
     def add_unique_traders(self, count: int) -> None:
         self._data[-1, MarketData.UNIQUE_TRADERS.value] += count
+
+    @check_reader
+    def add_buyer_count(self, count: int) -> None:
+        self._data[-1, MarketData.BUYER_COUNT.value] += count
+
+    @check_reader
+    def add_seller_count(self, count: int) -> float:
+        self._data[-1, MarketData.SELLER_COUNT.value] += count
 
     @check_reader
     def set_time(self, time: float) -> None:
