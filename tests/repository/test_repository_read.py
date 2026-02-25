@@ -8,15 +8,16 @@ from tests.repository.materials import *
 # TODO: add tests for get by ids
 @pytest.mark.asyncio
 class TestRepositoryRead:
-    user_repo = Repository(UserModel)
-
-    async def test_read_by_id(self, database_provider_test, user_factory):
+    async def test_read_by_id(
+        self, get_test_session, database_provider_test, user_factory
+    ):
+        user_repo = Repository(UserModel, get_test_session)
         await database_provider_test.init_models()
         new_user_schema = user_factory()
-        new_user = await self.user_repo.create(data=new_user_schema)
+        new_user = await user_repo.create(data=new_user_schema)
 
         LOGGER.info(f"user id is: {new_user.id}")
-        got_user = await self.user_repo.get_one_by_id(id_=new_user.id)
+        got_user = await user_repo.get_one_by_id(id_=new_user.id)
 
         assert got_user is not None
         LOGGER.info(f"got user model is: {got_user.to_dict()}")
@@ -24,22 +25,26 @@ class TestRepositoryRead:
         assert got_user.to_dict() == new_user.to_dict()
 
     async def test_read_by_id_column_exception(
-        self, database_provider_test, user_factory
+        self, get_test_session, database_provider_test, user_factory
     ):
+        user_repo = Repository(UserModel, get_test_session)
         await database_provider_test.init_models()
         id_ = "example"
         with pytest.raises(EntityException):
-            await self.user_repo.get_one_by_id(id_=id_, column="uuid")
+            await user_repo.get_one_by_id(id_=id_, column="uuid")
 
-    async def test_read_by_ids(self, database_provider_test, user_factory):
+    async def test_read_by_ids(
+        self, get_test_session, database_provider_test, user_factory
+    ):
+        user_repo = Repository(UserModel, get_test_session)
         await database_provider_test.init_models()
         users_schema = user_factory(count=5)
-        users = await self.user_repo.create_many(data=users_schema)
+        users = await user_repo.create_many(data=users_schema)
 
         users_id = [user.id for user in users]
         LOGGER.info(f"{users_id=}")
 
-        got_users = await self.user_repo.get_many_by_ids(users_id)
+        got_users = await user_repo.get_many_by_ids(users_id)
 
         assert len(got_users) == len(users_id)
         for user in got_users:
