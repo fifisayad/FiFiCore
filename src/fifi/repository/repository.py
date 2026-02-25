@@ -20,7 +20,6 @@ from ..decorator.db_async_session import db_async_session
 from ..models.decorated_base import DecoratedBase
 from ..exceptions import *
 
-
 # Generic Type for Pydantic and SQLAlchemy
 EntityModel = TypeVar("EntityModel", bound=DecoratedBase)
 EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
@@ -29,19 +28,17 @@ EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
 @dataclass
 class Repository(Generic[EntityModel, EntitySchema]):
     model: Type[EntityModel]
+    db_session: AsyncSession
 
-    @db_async_session
     async def create(
         self,
         data: EntitySchema,
-        session: Optional[AsyncSession] = None,
     ) -> EntityModel:
         """Accepts a Pydantic model, creates a new record in the database, catches
         any integrity errors, and returns the record.
 
         Args:
             data (EntitySchema): Pydantic model
-            session (Optional[AsyncSession]): SQLAlchemy async session
 
         Raises:
             IntegrityConflictException: if creation conflicts with existing data
@@ -50,13 +47,10 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             EntityModel: created SQLAlchemy model
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         try:
             db_model = self.model(**data.model_dump())
-            session.add(db_model)
-            await session.commit()
-            await session.refresh(db_model)
+            self.db_session.add(db_model)
+            await self.db_session.flush()
             return db_model
         except IntegrityError:
             raise IntegrityConflictException(
@@ -65,16 +59,13 @@ class Repository(Generic[EntityModel, EntitySchema]):
         except Exception as e:
             raise EntityException(f"Unknown error occurred: {e}") from e
 
-    @db_async_session
     async def create_many(
         self,
         data: List[EntitySchema],
-        session: Optional[AsyncSession] = None,
     ) -> List[EntityModel]:
         """_summary_
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
             data (list[EntitySchema]): list of Pydantic models
 
         Raises:
@@ -84,39 +75,31 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             list[EntityModel] | bool: list of created SQLAlchemy models or boolean
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         db_models = [self.model(**d.model_dump()) for d in data]
         if not data:
             return db_models
         try:
-            session.add_all(db_models)
-            await session.commit()
+            self.db_session.add_all(db_models)
+            await self.db_session.flush()
         except IntegrityError:
             raise IntegrityConflictException(
                 f"{self.model.__tablename__} conflict with existing data.",
             )
         except Exception as e:
             raise EntityException(f"Unknown error occurred: {e}") from e
-        for m in db_models:
-            await session.refresh(m)
-
         return db_models
 
-    @db_async_session
     async def get_one_by_id(
         self,
         id_: str,
         column: str = "id",
         with_for_update: bool = False,
-        session: Optional[AsyncSession] = None,
     ) -> Optional[EntityModel]:
         """Fetches one record from the database based on a column value and returns
         it, or returns None if it does not exist. Raises an exception if the column
         doesn't exist.
 
         Args:
-            session (Optional[AsyncSession], optional): SQLAlchemy async session
             id_ (str): value to search for in `column`.
             column (str, optional): the column name in which to search.
                 Defaults to "uuid".
@@ -130,8 +113,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             EntityModel: SQLAlchemy model or None
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         try:
             q = select(self.model).where(getattr(self.model, column) == id_)
         except AttributeError:
@@ -142,22 +123,19 @@ class Repository(Generic[EntityModel, EntitySchema]):
         if with_for_update:
             q = q.with_for_update()
 
-        results = await session.execute(q)
+        results = await self.db_session.execute(q)
         return results.unique().scalar_one_or_none()
 
-    @db_async_session
     async def get_many_by_ids(
         self,
         ids: Optional[List[str]],
         column: str = "id",
         with_for_update: bool = False,
-        session: Optional[AsyncSession] = None,
     ) -> List[EntityModel]:
         """Fetches multiple records from the database based on a column value and
         returns them. Raises an exception if the column doesn't exist.
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
             ids (list[str], optional): list of values to search for in
                 `column`. Defaults to None.
             column (str, optional): the column name in which to search
@@ -173,8 +151,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             list[EntityModel]: list of SQLAlchemy models
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         q = select(self.model)
         if ids:
             try:
@@ -187,46 +163,32 @@ class Repository(Generic[EntityModel, EntitySchema]):
         if with_for_update:
             q = q.with_for_update()
 
-        rows = await session.execute(q)
+        rows = await self.db_session.execute(q)
         return list(rows.unique().scalars().all())
 
-    @db_async_session
-    async def update_entity(
+    async def update_entities(
         self,
-        entity: EntityModel,
-        session: Optional[AsyncSession] = None,
     ) -> None:
         """
-        Update a model which is bound to a record in the database.
+        Update entities which are attaached to the current session.
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
-            model (EntityModel): updated SQLAlchemy mode
         Raises:
-            NotFoundException: if the record isn't found
-            IntegrityConflictException: if the update conflicts with existing data
-
         Returns:
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
-        await session.merge(entity)
-        await session.commit()
+        await self.db_session.flush()
 
-    @db_async_session
     async def update_by_id(
         self,
         data: EntitySchema,
         id_: str,
         column: str = "id",
-        session: Optional[AsyncSession] = None,
     ) -> EntityModel:
         """Updates a record in the database based on a column value and returns the
         updated record. Raises an exception if the record isn't found or if the
         column doesn't exist.
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
             data (EntitySchema): Pydantic schema for the updated data.
             id_ (str | UUID): value to search for in `column`
             column (str, optional): the column name in which to search
@@ -238,8 +200,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             EntityModel: updated SQLAlchemy model
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         db_model = await self.get_one_by_id(id_, column, True)
         if not db_model:
             raise NotFoundException(
@@ -249,22 +209,19 @@ class Repository(Generic[EntityModel, EntitySchema]):
         values = data.model_dump(exclude_unset=True)
         for k, v in values.items():
             setattr(db_model, k, v)
-        session.add(db_model)
 
         try:
-            await session.commit()
+            await self.db_session.flush()
             return db_model
         except IntegrityError:
             raise IntegrityConflictException(
                 f"{self.model.__tablename__} {column}={id_} conflict with existing data.",
             )
 
-    @db_async_session
     async def update_many_by_ids(
         self,
         updates: Dict[str, EntitySchema],
         column: str = "id",
-        session: Optional[AsyncSession] = None,
     ) -> List[EntityModel]:
         """Updates multiple records in the database based on a column value and
         returns the updated records. Raises an exception if the column doesn't
@@ -286,8 +243,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             list[EntityModel] | bool: list of updated SQLAlchemy models or boolean
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         updates = {str(id): update for id, update in updates.items() if update}
         ids = list(updates.keys())
         db_models = await self.get_many_by_ids(
@@ -300,28 +255,24 @@ class Repository(Generic[EntityModel, EntitySchema]):
             )
             for k, v in values.items():
                 setattr(db_model, k, v)
-            session.add(db_model)
 
         try:
-            await session.commit()
+            await self.db_session.flush()
         except IntegrityError:
             raise IntegrityConflictException(
                 f"{self.model.__tablename__} conflict with existing data.",
             )
         return db_models
 
-    @db_async_session
     async def remove_by_id(
         self,
         id_: str,
         column: str = "id",
-        session: Optional[AsyncSession] = None,
     ) -> int:
         """Removes a record from the database based on a column value. Raises an
         exception if the column doesn't exist.
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
             id (str | UUID): value to search for in `column` and delete
             column (str, optional): the column name in which to search.
                 Defaults to "uuid".
@@ -333,8 +284,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
             int: number of rows removed, 1 if successful, 0 if not. Can be greater
                 than 1 if id_ is not unique in the column.
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         try:
             query = delete(self.model).where(getattr(self.model, column) == id_)
         except AttributeError:
@@ -342,22 +291,19 @@ class Repository(Generic[EntityModel, EntitySchema]):
                 f"Column {column} not found on {self.model.__tablename__}.",
             )
 
-        rows = await session.execute(query)
-        await session.commit()
+        rows = await self.db_session.execute(query)
+        await self.db_session.flush()
         return rows.rowcount
 
-    @db_async_session
     async def remove_many_by_ids(
         self,
         ids: List[str],
         column: str = "id",
-        session: Optional[AsyncSession] = None,
     ) -> int:
         """Removes multiple records from the database based on a column value.
         Raises an exception if the column doesn't exist.
 
         Args:
-            session (Optional[AsyncSession]): SQLAlchemy async session
             ids (list[str  |  UUID]): list of values to search for in `column` and
             column (str, optional): the column name in which to search.
                 Defaults to "uuid".
@@ -369,8 +315,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
         Returns:
             int: _description_
         """
-        if not session:
-            raise NotExistedSessionException("session is not existed")
         if not ids:
             raise EntityException("No ids provided.")
 
@@ -381,6 +325,6 @@ class Repository(Generic[EntityModel, EntitySchema]):
                 f"Column {column} not found on {self.model.__tablename__}.",
             )
 
-        rows = await session.execute(query)
-        await session.commit()
+        rows = await self.db_session.execute(query)
+        await self.db_session.flush()
         return rows.rowcount
