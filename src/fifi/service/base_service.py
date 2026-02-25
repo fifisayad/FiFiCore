@@ -1,10 +1,10 @@
 from abc import ABC, abstractmethod
 from typing import Dict, Generic, List, Optional, TypeVar
+from sqlalchemy.ext.asyncio import AsyncSession
+from pydantic import BaseModel
 
 from ..repository.repository import Repository
 from ..models.decorated_base import DecoratedBase
-from pydantic import BaseModel
-
 
 EntityModel = TypeVar("EntityModel", bound=DecoratedBase)
 EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
@@ -23,6 +23,9 @@ class BaseService(ABC, Generic[EntityModel, EntitySchema]):
 
     Subclasses must implement the `repo` property to provide the concrete repository.
     """
+
+    def __init__(self, db_session: AsyncSession) -> None:
+        self.db_session = db_session
 
     @property
     @abstractmethod
@@ -94,7 +97,7 @@ class BaseService(ABC, Generic[EntityModel, EntitySchema]):
         Returns:
             None
         """
-        return await self.repo.update_entity(entity=entity)
+        return await self.repo.update_entities()
 
     async def update_by_id(self, id_: str, data: EntitySchema) -> EntityModel:
         """
