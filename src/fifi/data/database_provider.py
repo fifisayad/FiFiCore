@@ -1,4 +1,5 @@
 import os
+import asyncio
 
 from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker
@@ -87,6 +88,7 @@ class DatabaseProvider:
         dispose database engine in terms of gracefully shutting down
         """
         await self.engine.dispose()
+        await asyncio.sleep(0.1)
 
     async def init_models(self):
         """init_models.
@@ -95,3 +97,14 @@ class DatabaseProvider:
         """
         async with self.engine.begin() as conn:
             await conn.run_sync(DecoratedBase.metadata.create_all)
+
+    async def get_db_session(self):
+        async with self.get_new_seddion() as session:
+            try:
+                yield session
+                await session.commit()
+            except:
+                await session.rollback()
+                raise
+            finally:
+                await session.close()
