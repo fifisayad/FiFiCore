@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 from ..repository.repository import Repository
 from ..models.decorated_base import DecoratedBase
+from ..exceptions.exceptions import NotFoundException
 
 EntityModel = TypeVar("EntityModel", bound=DecoratedBase)
 EntitySchema = TypeVar("EntitySchema", bound=BaseModel)
@@ -74,6 +75,17 @@ class BaseService(ABC, Generic[EntityModel, EntitySchema]):
             Optional[EntityModel]: The entity instance if found, otherwise None.
         """
         return await self.repo.get_one_by_id(id_=id_)
+
+    async def get_by_id_or_raise(self, id_: str):
+        """get_by_id_or_raise.
+
+        Args:
+            id_ (int): id_
+        """
+        item = await self.read_by_id(id_)
+        if item is None:
+            raise NotFoundException(f"Entity with id {id_} was not found")
+        return item
 
     async def read_many_by_ids(self, ids: List[str]) -> List[EntityModel]:
         """
