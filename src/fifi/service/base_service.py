@@ -84,7 +84,9 @@ class BaseService(ABC, Generic[EntityModel, EntitySchema]):
         """
         item = await self.read_by_id(id_)
         if item is None:
-            raise NotFoundException(f"Entity with id {id_} was not found")
+            raise NotFoundException(
+                f"{self.repo.model.__name__}-Entity with id {id_} was not found"
+            )
         return item
 
     async def read_many_by_ids(self, ids: List[str]) -> List[EntityModel]:
